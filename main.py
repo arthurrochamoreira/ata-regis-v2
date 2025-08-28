@@ -26,6 +26,14 @@ PILL = {
 }
 DEFAULT_PILL_SIZE = "md"
 
+BADGE = {
+    "sm": {"h": 22, "px": 10, "font": 11},
+    "md": {"h": 26, "px": 12, "font": 12},
+    "lg": {"h": 30, "px": 14, "font": 13},
+}
+DEFAULT_BADGE_SIZE = "sm"
+
+
 # Cores base (menu)
 COLOR_ACTIVE_BG_LIGHT = "#EDE9FE"     # purple-100
 COLOR_ACTIVE_BG_DARK  = "#2E1065"     # purple-950 aprox
@@ -464,7 +472,9 @@ def main(page: ft.Page):
     # ==============================
     # ATAS: Tabela, Detalhes e Edição
     # ==============================
-    def badge(text: str, variant: str):
+    def badge(text: str, variant: str, size: str = DEFAULT_BADGE_SIZE):
+        size_cfg = BADGE.get(size, BADGE["sm"])
+
         variant = (variant or "").lower()
         if variant == "green":
             bg, fg = (ft.Colors.GREEN_100, ft.Colors.GREEN_800)
@@ -475,12 +485,24 @@ def main(page: ft.Page):
         else:
             bg, fg = (ft.Colors.RED_100, ft.Colors.RED_800)
             bgd, fgd = (ft.Colors.RED_900, ft.Colors.RED_100)
+
+        # Cores tema-aware
+        bg_final = bgd if is_dark() else bg
+        fg_final = fgd if is_dark() else fg
+
         return ft.Container(
-            padding=ft.padding.symmetric(2, 10),
-            bgcolor=bgd if is_dark() else bg,
+            height=size_cfg["h"],  # altura fixa para centralização vertical real
+            padding=ft.padding.symmetric(vertical=0, horizontal=size_cfg["px"]),
+            bgcolor=bg_final,
             border_radius=999,
-            content=ft.Text(text, size=11, color=fgd if is_dark() else fg, weight=ft.FontWeight.W_600)
+            content=ft.Row(
+                controls=[ft.Text(text, size=size_cfg["font"], weight=ft.FontWeight.W_600, color=fg_final)],
+                alignment=ft.MainAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,  # garante centro vertical
+                spacing=0,
+            ),
         )
+
 
     def situacao_to_variant(s: str) -> str:
         s = (s or "").lower()
@@ -571,11 +593,13 @@ def main(page: ft.Page):
                             vsep(24),
                             ft.Container(ft.Text(ata.get("fornecedor", ""), color=text_muted()), expand=3, alignment=ft.alignment.center),
                             vsep(24),
+                            
                             ft.Container(
-                                badge(ata.get("situacao", ""), situacao_to_variant(ata.get("situacao", ""))),
+                                badge(ata["situacao"], situacao_to_variant(ata["situacao"]), size="md"),
                                 expand=2,
-                                alignment=ft.alignment.center,
+                                alignment=ft.alignment.center,  # mantém centralizado na célula
                             ),
+
                             vsep(24),
                             ft.Container(
                                 alignment=ft.alignment.center,
