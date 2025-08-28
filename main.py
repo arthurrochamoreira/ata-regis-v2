@@ -6,22 +6,21 @@ import flet as ft
 # ==============================
 W_COLLAPSED = 80
 W_EXPANDED = 256
-P_ROOT = 16     # p-4 do aside
-P_ITEM = 12     # p-3 dos botões
+P_ROOT = 16  # p-4 do aside
+P_ITEM = 12  # p-3 dos botões
 ICON_SIZE = 24
 RADIUS_ASIDE = 24
-R_ITEM = 12     # rounded-lg
-BAR_W = 6       # espessura da barrinha do item ativo
+R_ITEM = 12  # rounded-lg
+BAR_W = 6  # espessura da barrinha do item ativo
 ANIM = ft.Animation(300, "easeInOut")
 
 # DRY Principle: Define filter keys once.
 FILTER_KEYS = ('vigente', 'vencida', 'a_vencer')
 
-
 # Alturas/paddings padronizados para PÍLULA
 PILL = {
     "sm": {"h": 36, "px": 12, "font": 12},
-    "md": {"h": 44, "px": 16, "font": 14},  # mesma altura do input
+    "md": {"h": 44, "px": 16, "font": 14},
     "lg": {"h": 52, "px": 20, "font": 16},
 }
 DEFAULT_PILL_SIZE = "md"
@@ -34,19 +33,21 @@ BADGE = {
 DEFAULT_BADGE_SIZE = "sm"
 
 # Cores base (menu)
-COLOR_ACTIVE_BG_LIGHT = "#EDE9FE"     # purple-100
-COLOR_ACTIVE_BG_DARK  = "#2E1065"     # purple-950 aprox
-COLOR_ACTIVE_BAR_LIGHT = "#8B5CF6"    # purple-500
-COLOR_ACTIVE_BAR_DARK  = "#A78BFA"    # purple-300
-TXT_ACTIVE_LIGHT = "#7C3AED"
-TXT_ACTIVE_DARK  = "#E9D5FF"
+COLOR_ACTIVE_BG_LIGHT = "#EDE9FE"  # purple-100
+COLOR_ACTIVE_BG_DARK = "#2E1065"  # purple-950 aprox
+COLOR_ACTIVE_BAR_LIGHT = "#8B5CF6"  # purple-500
+COLOR_ACTIVE_BAR_DARK = "#A78BFA"  # purple-300
+
+# FIX: Update TXT_ACTIVE_LIGHT to a darker shade for better contrast
+TXT_ACTIVE_LIGHT = "#6D28D9" # purple-700
+TXT_ACTIVE_DARK = "#E9D5FF"
 
 # Paleta do dashboard
 CHART_GREEN = "#10B981"  # GREEN-500
 CHART_AMBER = "#FF6F00"  # amber-500
-CHART_RED   = "#EF4444"  # red-500
+CHART_RED = "#EF4444"  # red-500
 CHART_GRAY_LIGHT = "#E5E7EB"  # gray-200
-CHART_GRAY_DARK  = "#334155"  # slate-700
+CHART_GRAY_DARK = "#334155"  # slate-700
 
 # Dicionário de cores para os cards das atas - AGORA USANDO A MESMA LÓGICA DO BADGE
 ATA_CARD_PALETTE = {
@@ -57,7 +58,8 @@ ATA_CARD_PALETTE = {
         "icon_color_dark": ft.Colors.GREEN_100,
     },
     "amber": {
-        "bg_light": ft.Colors.AMBER_100,
+        # FIX: Change AMBER_100 to AMBER_50 for better contrast on light mode
+        "bg_light": ft.Colors.AMBER_50,
         "bg_dark": ft.Colors.AMBER_900,
         "icon_color": ft.Colors.AMBER_900,
         "icon_color_dark": ft.Colors.AMBER_100,
@@ -71,9 +73,9 @@ ATA_CARD_PALETTE = {
 }
 
 # ==== TOKENS DE BORDA (Design System) ====
-BORDER_COLOR_LIGHT = ft.Colors.GREY_600
-BORDER_COLOR_DARK  = ft.Colors.GREY_600
-BORDER_WIDTH       = 1
+BORDER_COLOR_LIGHT = ft.Colors.GREY_300
+BORDER_COLOR_DARK = ft.Colors.GREY_700
+BORDER_WIDTH = 1
 BORDER_RADIUS_PILL = 999
 
 # ==============================
@@ -101,12 +103,12 @@ ATAS = {
         },
     ],
     "vencidas": [
-        {"numero": "4444/4444","vigencia": "04/01/2025","objeto": "s","fornecedor": "44444","situacao": "Vencida","valorTotal": "R$ 0,00","documentoSei": "","itens": [],"contatos": {"telefone": [], "email": []}},
-        {"numero": "0102/0222","vigencia": "07/01/2024","objeto": "sabão","fornecedor": "mac","situacao": "Vencida","valorTotal": "R$ 0,00","documentoSei": "","itens": [],"contatos": {"telefone": [], "email": []}},
-        {"numero": "0014/2024","vigencia": "31/12/2023","objeto": "Equipamentos de TI","fornecedor": "TechCorp Ltda","situacao": "Vencida","valorTotal": "R$ 0,00","documentoSei": "","itens": [],"contatos": {"telefone": [], "email": []}},
+        {"numero": "4444/4444", "vigencia": "04/01/2025", "objeto": "s", "fornecedor": "44444", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
+        {"numero": "0102/0222", "vigencia": "07/01/2024", "objeto": "sabão", "fornecedor": "mac", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
+        {"numero": "0014/2024", "vigencia": "31/12/2023", "objeto": "Equipamentos de TI", "fornecedor": "TechCorp Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
     ],
     "aVencer": [
-        {"numero": "0000/1222","vigencia": "07/11/2025","objeto": "scanners","fornecedor": "EPSON","situacao": "A Vencer","valorTotal": "R$ 0,00","documentoSei": "","itens": [],"contatos": {"telefone": [], "email": []}},
+        {"numero": "0000/1222", "vigencia": "07/11/2025", "objeto": "scanners", "fornecedor": "EPSON", "situacao": "A Vencer", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
     ],
 }
 
@@ -186,7 +188,7 @@ def main(page: ft.Page):
     def pill_button(
         text: str,
         icon: str | None = None,
-        variant: str = "filled",        # "filled" | "outlined" | "text" | "elevated"
+        variant: str = "filled",  # "filled" | "outlined" | "text" | "elevated"
         size: str = DEFAULT_PILL_SIZE,  # "sm" | "md" | "lg"
         on_click=None,
         expand: bool = False,
@@ -197,7 +199,7 @@ def main(page: ft.Page):
         style = ft.ButtonStyle(
             padding=ft.padding.symmetric(vertical=0, horizontal=cfg["px"]),
             shape=ft.RoundedRectangleBorder(radius=999),
-            side=ft.BorderSide(BORDER_WIDTH, border_token()),
+            side=ft.BorderSide(BORDER_WIDTH, border_token()) if variant == "outlined" else None,
         )
         common = dict(
             text=text, icon=icon, style=style, height=cfg["h"],
@@ -222,7 +224,8 @@ def main(page: ft.Page):
         return ft.Colors.GREY_200 if is_dark() else ft.Colors.GREY_900
 
     def text_muted():
-        return ft.Colors.GREY_400 if is_dark() else ft.Colors.GREY_600
+        # FIX: Change GREY_600 to GREY_800 for better contrast on light mode
+        return ft.Colors.GREY_400 if is_dark() else ft.Colors.GREY_800
 
     def divider_color():
         return ft.Colors.with_opacity(0.12 if is_dark() else 0.08, ft.Colors.BLACK)
@@ -249,7 +252,8 @@ def main(page: ft.Page):
             ref["text_box"].opacity = 1
             ref["text_box"].padding = ft.padding.only(right=8)
 
-        base = ft.Colors.GREY_400 if is_dark() else ft.Colors.GREY_600
+        # FIX: Use text_muted() for inactive items for better contrast
+        base = text_muted()
         if active:
             ref["icon"].color = TXT_ACTIVE_DARK if is_dark() else TXT_ACTIVE_LIGHT
             ref["text"].color = TXT_ACTIVE_DARK if is_dark() else TXT_ACTIVE_LIGHT
@@ -307,7 +311,7 @@ def main(page: ft.Page):
 
     def make_item(key: str, icon_name: str, label: str, active=False):
         icon = ft.Icon(icon_name, size=ICON_SIZE)
-        txt  = ft.Text(label, size=13, weight=ft.FontWeight.W_600, no_wrap=True)
+        txt = ft.Text(label, size=13, weight=ft.FontWeight.W_600, no_wrap=True)
 
         text_box = ft.Container(
             alignment=ft.alignment.center_left,
@@ -415,8 +419,8 @@ def main(page: ft.Page):
         )
 
     def Bars():
-        months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]
-        values = [0,0,0,0,0,0,0,0,10,45,60,0]
+        months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+        values = [0, 0, 0, 0, 0, 0, 0, 0, 10, 45, 60, 0]
         groups = []
         for i, v in enumerate(values):
             color = (CHART_AMBER if i == 9 else CHART_RED if i == 10 else (CHART_GRAY_DARK if is_dark() else CHART_GRAY_LIGHT))
@@ -479,7 +483,8 @@ def main(page: ft.Page):
             bg, fg = (ft.Colors.GREEN_100, ft.Colors.GREEN_800)
             bgd, fgd = (ft.Colors.GREEN_900, ft.Colors.GREEN_100)
         elif variant == "amber":
-            bg, fg = (ft.Colors.AMBER_100, ft.Colors.AMBER_900)
+            # FIX: Use AMBER_50 for background in light mode to improve contrast
+            bg, fg = (ft.Colors.AMBER_50, ft.Colors.AMBER_900)
             bgd, fgd = (ft.Colors.AMBER_900, ft.Colors.AMBER_100)
         else:
             bg, fg = (ft.Colors.RED_100, ft.Colors.RED_800)
@@ -728,47 +733,45 @@ def main(page: ft.Page):
         )
 
         # ===== Botão de FILTRO com a borda de pílula à esquerda =====
-        # Usamos SubmenuButton com estilo de OutlinedButton
-        filter_btn = ft.SubmenuButton(
-            height=_cfg["h"],  # <--- CORRIGIDO: height movido para o botão
-            style=ft.ButtonStyle(
-                padding=_pad,
-                shape=ft.RoundedRectangleBorder(
-                    radius=ft.border_radius.only(top_left=999, bottom_left=999, top_right=0, bottom_right=0)
+        # FIX: The SubmenuButton does not have a style property like other buttons.
+        # This implementation uses a manual button group approach for proper styling.
+        filter_btn = ft.Container(
+            content=ft.SubmenuButton(
+                content=ft.Row(
+                    spacing=8,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls=[
+                        ft.Icon("filter_list", size=18, color=text_color()),
+                        lbl_filter,
+                    ],
                 ),
-                side=ft.BorderSide(BORDER_WIDTH, border_token()),
-                color=text_color(),
-                icon_color=text_color(),
+                controls=[ft.MenuItemButton(close_on_click=False, content=menu_box)],
             ),
-            # O clique no SubmenuButton abre o menu
-            controls=[ft.MenuItemButton(close_on_click=False, content=menu_box)],
-            # Conteúdo visual do "botão"
-            content=ft.Row(
-                spacing=8,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                controls=[
-                    ft.Icon("filter_list", size=18, color=text_color()),
-                    lbl_filter,
-                ],
-            ),
+            padding=_pad,
+            height=_cfg["h"],
+            border=ft.border.only(left=ft.BorderSide(BORDER_WIDTH, border_token()), top=ft.BorderSide(BORDER_WIDTH, border_token()), bottom=ft.BorderSide(BORDER_WIDTH, border_token())),
+            border_radius=ft.border_radius.only(top_left=999, bottom_left=999, top_right=0, bottom_right=0)
         )
 
         # Botão "Ordenar" (Outlined)
-        btn_sort = ft.OutlinedButton(
-            text="Ordenar",
-            icon="sort",
-            height=_cfg["h"],  # <--- CORRIGIDO: height movido para o botão
-            style=ft.ButtonStyle(
-                padding=_pad,
-                shape=ft.RoundedRectangleBorder(
-                    radius=ft.border_radius.only(top_left=0, bottom_left=0, top_right=999, bottom_right=999)
+        btn_sort = ft.Container(
+            content=ft.OutlinedButton(
+                text="Ordenar",
+                icon="sort",
+                style=ft.ButtonStyle(
+                    shape=ft.RoundedRectangleBorder(
+                        radius=ft.border_radius.only(top_left=0, bottom_left=0, top_right=999, bottom_right=999)
+                    ),
+                    side=ft.BorderSide(BORDER_WIDTH, border_token()),
+                    color=text_color(),
+                    icon_color=text_color(),
                 ),
-                side=ft.BorderSide(BORDER_WIDTH, border_token()),
-                color=text_color(),
-                icon_color=text_color(),
             ),
+            height=_cfg["h"],
+            padding=_pad,
         )
 
+        # FIX: Combine the filter and sort buttons into a single row with negative spacing
         btn_group = ft.Row(
             spacing=-1,
             controls=[filter_btn, btn_sort],
@@ -825,7 +828,6 @@ def main(page: ft.Page):
             if show_all or filter_state.get(key):
                 info = filter_map[key]
                 cards.append(AtasSectionCard(info['title'], info['icon'], info['data'], variant=info['variant']))
-
 
         grid = ft.ResponsiveRow(
             columns=12, spacing=16, run_spacing=16,
@@ -892,8 +894,8 @@ def main(page: ft.Page):
             ),
         )
         grid_top = ft.ResponsiveRow(columns=12, spacing=16, run_spacing=16, controls=[
-            ft.Container(content=dados, col={"xs":12, "lg":6}),
-            ft.Container(content=forn,  col={"xs":12, "lg":6}),
+            ft.Container(content=dados, col={"xs": 12, "lg": 6}),
+            ft.Container(content=forn, col={"xs": 12, "lg": 6}),
         ])
 
         it_cols = [
@@ -929,11 +931,11 @@ def main(page: ft.Page):
 
     # --------- Edição ---------
     def show_ata_edit(ata: dict):
-        numero = tf(label="Número da Ata", value=ata.get("numero",""))
-        documento_sei = tf(label="Documento SEI", value=ata.get("documentoSei",""))
-        data_vigencia = tf(label="Data de Vigência", value=ata.get("vigencia",""))
-        objeto = tf(label="Objeto", value=ata.get("objeto",""))
-        fornecedor = tf(label="Fornecedor", value=ata.get("fornecedor",""))
+        numero = tf(label="Número da Ata", value=ata.get("numero", ""))
+        documento_sei = tf(label="Documento SEI", value=ata.get("documentoSei", ""))
+        data_vigencia = tf(label="Data de Vigência", value=ata.get("vigencia", ""))
+        objeto = tf(label="Objeto", value=ata.get("objeto", ""))
+        fornecedor = tf(label="Fornecedor", value=ata.get("fornecedor", ""))
 
         def on_num_change(e):
             e.control.value = format_ata_number(e.control.value)
@@ -956,12 +958,12 @@ def main(page: ft.Page):
             emails.append(tf(label=f"E-mail {len(emails)+1}", value="", prefix_icon=ft.Icons.MAIL))
             refresh()
 
-        itens = ata.get("itens")[:] if ata.get("itens") else [{"descricao":"","quantidade":"","valorUnitario":""}]
+        itens = ata.get("itens")[:] if ata.get("itens") else [{"descricao": "", "quantidade": "", "valorUnitario": ""}]
         itens_fields = []
         def build_item_row(idx, item):
-            desc = tf(label="Descrição", value=item.get("descricao",""), expand=True)
-            qtd  = tf(label="Qtd.", value=str(item.get("quantidade","")), width=80)
-            vu   = tf(label="Valor Unit.", value=item.get("valorUnitario",""), width=120)
+            desc = tf(label="Descrição", value=item.get("descricao", ""), expand=True)
+            qtd = tf(label="Qtd.", value=str(item.get("quantidade", "")), width=80)
+            vu = tf(label="Valor Unit.", value=item.get("valorUnitario", ""), width=120)
             del_btn = ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, i=idx: confirm_delete("item", i))
             return ft.Row([desc, qtd, vu, del_btn], spacing=8)
 
@@ -969,7 +971,7 @@ def main(page: ft.Page):
             itens_fields.append(build_item_row(i, it))
 
         def add_item(e):
-            itens.append({"descricao":"","quantidade":"","valorUnitario":""})
+            itens.append({"descricao": "", "quantidade": "", "valorUnitario": ""})
             itens_fields.append(build_item_row(len(itens_fields), itens[-1]))
             refresh()
 
@@ -977,10 +979,10 @@ def main(page: ft.Page):
         delete_ctx = {"type": None, "index": None}
 
         def confirm_delete(kind, idx):
-            delete_ctx["type"]=kind; delete_ctx["index"]=idx
+            delete_ctx["type"] = kind; delete_ctx["index"] = idx
             dlg.actions = [
                 pill_button("Cancelar", variant="text", on_click=lambda e: page.close(dlg)),
-                pill_button("Excluir",  icon="delete", variant="filled", on_click=do_delete),
+                pill_button("Excluir", icon="delete", variant="filled", on_click=do_delete),
             ]
             page.open(dlg)
 
@@ -1006,7 +1008,7 @@ def main(page: ft.Page):
                 ft.Row(
                     [ft.Text("Contatos", size=16, weight=ft.FontWeight.W_600, color=text_color()),
                      pill_button("Adicionar telefone", icon="add", variant="text", size="sm", on_click=add_tel),
-                     pill_button("Adicionar e-mail",  icon="add", variant="text", size="sm", on_click=add_email)],
+                     pill_button("Adicionar e-mail", icon="add", variant="text", size="sm", on_click=add_email)],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                 ),
                 ft.Column([ft.Row([t, ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, i=i: confirm_delete("telefone", i))], spacing=8) for i, t in enumerate(tels)], spacing=8),
@@ -1025,7 +1027,7 @@ def main(page: ft.Page):
         header = ft.Row(
             controls=[
                 ft.Column([ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color()),
-                          ft.Text("Editar Ata", size=13, color=text_muted())], spacing=2, expand=True),
+                           ft.Text("Editar Ata", size=13, color=text_muted())], spacing=2, expand=True),
                 ft.Row([
                     pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: set_content(AtasPage())),
                     pill_button("Salvar", icon="save", variant="filled", on_click=lambda e: (show_snack("Ata salva com sucesso!"), set_content(AtasPage()))),
@@ -1048,8 +1050,8 @@ def main(page: ft.Page):
 
         grid_top = ft.ResponsiveRow(
             columns=12, spacing=16, run_spacing=16,
-            controls=[ft.Container(content=dados_gerais, col={"xs":12,"lg":6}),
-                      ft.Container(content=contatos_card, col={"xs":12,"lg":6})]
+            controls=[ft.Container(content=dados_gerais, col={"xs": 12, "lg": 6}),
+                      ft.Container(content=contatos_card, col={"xs": 12, "lg": 6})]
         )
 
         itens_col = ft.Column(spacing=10)
@@ -1109,7 +1111,7 @@ def main(page: ft.Page):
     )
 
     theme_icon = ft.Icon("dark_mode", size=ICON_SIZE, color=ft.Colors.GREY_600)
-    theme_text  = ft.Text("Modo Escuro", size=13, weight=ft.FontWeight.W_600, no_wrap=True, opacity=0)
+    theme_text = ft.Text("Modo Escuro", size=13, weight=ft.FontWeight.W_600, no_wrap=True, opacity=0)
     theme_text_box = ft.Container(
         alignment=ft.alignment.center_left, content=theme_text,
         width=0, animate=ANIM, animate_opacity=300, clip_behavior=ft.ClipBehavior.HARD_EDGE,
