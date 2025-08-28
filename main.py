@@ -18,6 +18,9 @@ R_ITEM = 12     # rounded-lg
 BAR_W = 6       # espessura da barrinha do item ativo
 ANIM = ft.Animation(300, "easeInOut")
 
+# Altura padrão para inputs e botões (padronização visual)
+H_INPUT = 44
+
 # Cores base (menu)
 COLOR_ACTIVE_BG_LIGHT = "#EDE9FE"     # purple-100
 COLOR_ACTIVE_BG_DARK  = "#2E1065"     # purple-950 aprox
@@ -94,7 +97,6 @@ def format_sei(val: str) -> str:
         parts.append(digits[11:15] + "-")
     parts.append(digits[15:17])
     return "".join(parts).strip(".-/")
-
 
 # ==============================
 # APP
@@ -410,8 +412,7 @@ def main(page: ft.Page):
             return "amber"
         return "red"
 
-    # ---------- List-Card (igual ao print) ----------
-# ---------- List-Card (com colunas + separadores + títulos centralizados) ----------
+    # ---------- List-Card (com colunas + separadores + títulos centralizados) ----------
     def AtasSectionCard(title: str, icon_name: str, data: list[dict]):
         def vsep(h=28):
             return ft.Container(width=1, height=h, bgcolor=divider_color())
@@ -515,25 +516,35 @@ def main(page: ft.Page):
             ),
         )
 
-
-
     def AtasPage():
-        # barra superior (busca + ações)
+        # ===== CORREÇÃO AQUI =====
+        # Usamos altura fixa para campo e botões e padding somente horizontal
+        shared_padding = ft.padding.symmetric(vertical=0, horizontal=16)
+        shared_radius = 999
+
         search = ft.TextField(
             hint_text="Buscar atas...",
             prefix_icon=ft.Icons.SEARCH,
-            border_radius=999,
+            border_radius=shared_radius,
+            content_padding=shared_padding,   # vertical = 0
             bgcolor=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
+            height=H_INPUT,                   # altura fixa padronizada
             expand=True,
+        )
+
+        button_style = ft.ButtonStyle(
+            padding=shared_padding,           # vertical = 0
+            shape=ft.RoundedRectangleBorder(radius=shared_radius),
         )
 
         actions = ft.Row(
             controls=[
-                ft.OutlinedButton("Filtrar", icon="filter_list"),
-                ft.OutlinedButton("Ordenar", icon="sort"),
-                ft.FilledButton("Nova Ata", icon="add"),
+                ft.OutlinedButton("Filtrar", icon="filter_list", style=button_style, height=H_INPUT),
+                ft.OutlinedButton("Ordenar", icon="sort", style=button_style, height=H_INPUT),
+                ft.FilledButton("Nova Ata", icon="add", style=button_style, height=H_INPUT),
             ],
             spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,  # centraliza verticalmente
         )
 
         top = ft.Container(
