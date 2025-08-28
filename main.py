@@ -547,7 +547,7 @@ def main(page: ft.Page):
             content=ft.ResponsiveRow(
                 columns=12,
                 controls=[
-                    ft.Container(content=ft.Row([ft.Icon("search", color=text_muted()), search], spacing=8), col={"xs":12, "md":7}),
+                    ft.Container(content=ft.Row([search], spacing=8), col={"xs":12, "md":7}),
                     ft.Container(content=actions, col={"xs":12, "md":5}, alignment=ft.alignment.center_right),
                 ],
             ),
