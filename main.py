@@ -1,5 +1,4 @@
-# main.py
-# 1) pip install -U flet
+
 # 2) python main.py
 
 import math
@@ -32,7 +31,6 @@ BADGE = {
     "lg": {"h": 30, "px": 14, "font": 13},
 }
 DEFAULT_BADGE_SIZE = "sm"
-
 
 # Cores base (menu)
 COLOR_ACTIVE_BG_LIGHT = "#EDE9FE"     # purple-100
@@ -76,7 +74,6 @@ BORDER_COLOR_LIGHT = ft.Colors.GREY_600
 BORDER_COLOR_DARK  = ft.Colors.GREY_600
 BORDER_WIDTH       = 1
 BORDER_RADIUS_PILL = 999
-
 
 # ==============================
 # MOCKS
@@ -140,7 +137,6 @@ def format_sei(val: str) -> str:
     parts.append(digits[15:17])
     return "".join(parts).strip(".-/")
 
-
 # ==============================
 # APP
 # ==============================
@@ -150,7 +146,13 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.bgcolor = ft.Colors.GREY_100
 
-    state = {"collapsed": True, "dark": False, "active": "dashboard"}
+    state = {
+        "collapsed": True,
+        "dark": False,
+        "active": "dashboard",
+        # === FILTROS === mantidos no estado da página
+        "filters": {"vigente": False, "vencida": False, "a_vencer": False},
+    }
 
     # --- REFs menu ---
     root = ft.Container()
@@ -167,19 +169,17 @@ def main(page: ft.Page):
     content_col = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
     content = ft.Container(expand=True, padding=20, content=content_col)
 
-        # ---- Tokens de borda (tema-aware) ----
+    # ---- Tokens de borda (tema-aware) ----
     def border_token():
         return BORDER_COLOR_DARK if is_dark() else BORDER_COLOR_LIGHT
 
     # ---- Factory simples para TextField com borda padrão ----
     def tf(**kwargs):
-        # Aplica a borda padrão; demais props vêm por kwargs
         return ft.TextField(
             border_color=border_token(),
             border_width=BORDER_WIDTH,
             **kwargs
         )
-
 
     # ---------- Factory de botões PÍLULA (tema-aware) ----------
     def pill_button(
@@ -194,15 +194,14 @@ def main(page: ft.Page):
     ):
         cfg = PILL.get(size, PILL["md"])
         style = ft.ButtonStyle(
-            padding=ft.padding.symmetric(vertical=0, horizontal=cfg["px"]),  # padding só horizontal
-            shape=ft.RoundedRectangleBorder(radius=999),                      # pílula
+            padding=ft.padding.symmetric(vertical=0, horizontal=cfg["px"]),
+            shape=ft.RoundedRectangleBorder(radius=999),
             side=ft.BorderSide(BORDER_WIDTH, border_token()),
         )
         common = dict(
             text=text, icon=icon, style=style, height=cfg["h"],
             on_click=on_click, expand=expand, disabled=disabled, tooltip=tooltip
         )
-
         if variant == "outlined":
             return ft.OutlinedButton(**common)
         if variant == "text":
@@ -210,7 +209,6 @@ def main(page: ft.Page):
         if variant == "elevated":
             return ft.ElevatedButton(**common)
         return ft.FilledButton(**common)
-
 
     # ---------------- helpers gerais ----------------
     def is_dark(): return state["dark"]
@@ -231,7 +229,7 @@ def main(page: ft.Page):
     def set_content(view):
         content_col.controls = [view]
         page.update()
-    
+
     # ---------------- MENU (com barrinha integrada) ----------------
     def update_item_visual(key: str):
         ref = items[key]
@@ -503,7 +501,6 @@ def main(page: ft.Page):
             ),
         )
 
-
     def situacao_to_variant(s: str) -> str:
         s = (s or "").lower()
         if s == "vigente":
@@ -636,11 +633,19 @@ def main(page: ft.Page):
             ),
         )
 
+    # === FILTROS: helpers de label/contagem ===
+    def _filters_count() -> int:
+        f = state["filters"]
+        return int(bool(f["vigente"])) + int(bool(f["vencida"])) + int(bool(f["a_vencer"]))
+
+    def _filter_label() -> str:
+        n = _filters_count()
+        return f"Filtrar ({n})" if n else "Filtrar"
 
     def AtasPage():
         # Barra de busca (altura igual à pílula "md")
         input_padding = ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"])
-        search = tf(  # usa factory com borda padrão
+        search = tf(
             hint_text="Buscar atas...",
             prefix_icon=ft.Icons.SEARCH,
             border_radius=BORDER_RADIUS_PILL,
@@ -650,47 +655,130 @@ def main(page: ft.Page):
             expand=True,
         )
 
-
-        # --- Ações (Button Group + Primário) ---
-        # --- Ações (grupo + primário), alinhadas à direita ---
+        # === FILTROS ===
         _cfg = PILL["md"]
         _pad = ft.padding.symmetric(vertical=0, horizontal=_cfg["px"])
+
+        # rótulo dinâmico
+        def _filters_count() -> int:
+            f = state["filters"]
+            return int(bool(f["vigente"])) + int(bool(f["vencida"])) + int(bool(f["a_vencer"]))
+        def _filter_label() -> str:
+            n = _filters_count()
+            return f"Filtrar ({n})" if n else "Filtrar"
+
+        lbl_filter = ft.Text(_filter_label(), size=_cfg["font"], weight=ft.FontWeight.W_500, color=text_color())
+
+        # checkboxes sincronizados com o estado
+        cb_vigente = ft.Checkbox(label="Vigentes", value=state["filters"]["vigente"])
+        cb_vencida = ft.Checkbox(label="Vencidas", value=state["filters"]["vencida"])
+        cb_a_vencer = ft.Checkbox(label="A Vencer", value=state["filters"]["a_vencer"])
+
+        def _sync_checkboxes():
+            cb_vigente.value = state["filters"]["vigente"]
+            cb_vencida.value = state["filters"]["vencida"]
+            cb_a_vencer.value = state["filters"]["a_vencer"]
+            cb_vigente.update(); cb_vencida.update(); cb_a_vencer.update()
+
+        def _update_label():
+            lbl_filter.value = _filter_label()
+            lbl_filter.update()
+
+        def _toggle_specific(key: str, val: bool):
+            state["filters"][key] = bool(val)
+            _update_label()
+
+        cb_vigente.on_change = lambda e: _toggle_specific("vigente", e.control.value)
+        cb_vencida.on_change = lambda e: _toggle_specific("vencida", e.control.value)
+        cb_a_vencer.on_change = lambda e: _toggle_specific("a_vencer", e.control.value)
+
+        def _on_filter_clear(_=None):
+            state["filters"] = {"vigente": False, "vencida": False, "a_vencer": False}
+            _sync_checkboxes()
+            _update_label()  # mantém o menu aberto
+
+        def _on_filter_apply(_=None):
+            # refaz a view com os filtros aplicados
+            set_content(AtasPage())
+
+        # Conteúdo do menu de filtros
+        menu_box = ft.Container(
+            bgcolor=surface_bg(),
+            border=ft.border.all(1, border_token()),
+            border_radius=16,
+            padding=12,
+            width=280,
+            content=ft.Column(
+                tight=True,
+                spacing=8,
+                controls=[
+                    cb_vigente,
+                    cb_vencida,
+                    cb_a_vencer,
+                    ft.Container(height=8),
+                    ft.Row(
+                        alignment=ft.MainAxisAlignment.END,
+                        spacing=8,
+                        controls=[
+                            pill_button("Limpar", variant="text", size="sm", on_click=_on_filter_clear),
+                            pill_button("Aplicar", variant="filled", size="sm", icon="done", on_click=_on_filter_apply),
+                        ],
+                    ),
+                ],
+            ),
+        )
+
+        # ===== Botão de FILTRO com aparência idêntica ao OutlinedButton =====
+        # Usamos SubmenuButton (abre o menu) dentro de um Container com borda/raio/padding
+        filter_btn_shell = ft.Container(
+            height=_cfg["h"],
+            padding=_pad,
+            alignment=ft.alignment.center,
+            border=ft.border.only(
+                left=ft.BorderSide(BORDER_WIDTH, border_token()),
+                top=ft.BorderSide(BORDER_WIDTH, border_token()),
+                bottom=ft.BorderSide(BORDER_WIDTH, border_token()),
+                right=ft.BorderSide(0, border_token()),  # sem borda direita para não duplicar a junta
+            ),
+            border_radius=ft.border_radius.only(top_left=999, bottom_left=999, top_right=0, bottom_right=0),
+            content=ft.SubmenuButton(
+                # O clique no SubmenuButton abre o menu
+                controls=[ft.MenuItemButton(close_on_click=False, content=menu_box)],
+                # conteúdo visual do "botão"
+                content=ft.Row(
+                    spacing=8,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls=[
+                        ft.Icon("filter_list", size=18, color=text_color()),
+                        lbl_filter,
+                    ],
+                ),
+            ),
+        )
+
+        # Botão "Ordenar" (Outlined), grudadinho no filtro
+        btn_sort = ft.OutlinedButton(
+            text="Ordenar",
+            icon="sort",
+            height=_cfg["h"],
+            style=ft.ButtonStyle(
+                padding=_pad,
+                shape=ft.RoundedRectangleBorder(
+                    radius=ft.border_radius.only(top_left=0, bottom_left=0, top_right=999, bottom_right=999)
+                ),
+                side=ft.BorderSide(BORDER_WIDTH, border_token()),
+                color=text_color(),
+                icon_color=text_color(),
+            ),
+        )
 
         btn_group = ft.Row(
             spacing=0,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                ft.OutlinedButton(
-                    text="Filtrar",
-                    icon="filter_list",
-                    height=_cfg["h"],
-                    style=ft.ButtonStyle(
-                        padding=_pad,
-                        shape=ft.RoundedRectangleBorder(
-                            radius=ft.border_radius.only(
-                                top_left=999, bottom_left=999, top_right=0, bottom_right=0
-                            )
-                        ),
-                        side=ft.BorderSide(BORDER_WIDTH, border_token()),
-                    ),
-                ),
-                ft.OutlinedButton(
-                    text="Ordenar",
-                    icon="sort",
-                    height=_cfg["h"],
-                    style=ft.ButtonStyle(
-                        padding=_pad,
-                        shape=ft.RoundedRectangleBorder(
-                            radius=ft.border_radius.only(
-                                top_left=0, bottom_left=0, top_right=999, bottom_right=999
-                            )
-                        ),
-                        side=ft.BorderSide(BORDER_WIDTH, border_token()),
-                    ),
-                ),
-            ],
+            controls=[filter_btn_shell, btn_sort],  # aparência contínua, junta de 1px
         )
 
+        # Botão primário "Nova Ata"
         btn_new = ft.FilledButton(
             text="Nova Ata",
             icon="add",
@@ -718,29 +806,31 @@ def main(page: ft.Page):
                 color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK),
             ),
             content=ft.Row(
-                controls=[
-                    ft.Container(content=search, expand=True),
-                    actions,  # fica à direita, fora do TextField
-                ],
+                controls=[ft.Container(content=search, expand=True), actions],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=12,
             ),
         )
 
-
+        # === FILTROS: decide quais cards mostrar ===
+        f = state["filters"]
+        show_all = not any(f.values())
+        cards = []
+        if show_all or f["vigente"]:
+            cards.append(AtasSectionCard("Atas Vigentes", "check_circle", ATAS["vigentes"], variant="green"))
+        if show_all or f["vencida"]:
+            cards.append(AtasSectionCard("Atas Vencidas", "cancel", ATAS["vencidas"], variant="red"))
+        if show_all or f["a_vencer"]:
+            cards.append(AtasSectionCard("Atas a Vencer", "schedule", ATAS["aVencer"], variant="amber"))
 
         grid = ft.ResponsiveRow(
             columns=12, spacing=16, run_spacing=16,
-            controls=[
-                ft.Container(content=top, col=12),
-                # Onde monta a grid de cards:
-                AtasSectionCard("Atas Vigentes", "check_circle", ATAS["vigentes"], variant="green"),
-                AtasSectionCard("Atas Vencidas", "cancel", ATAS["vencidas"], variant="red"),
-                AtasSectionCard("Atas a Vencer", "schedule", ATAS["aVencer"], variant="amber"),
-            ],
+            controls=[ft.Container(content=top, col=12), *cards],
         )
         return grid
+
+
 
     # --------- Detalhes ---------
     def show_ata_details(ata: dict):
@@ -945,10 +1035,8 @@ def main(page: ft.Page):
         dados_gerais = ft.Container(
             bgcolor=surface_bg(), border_radius=16, padding=16,
             content=ft.Column(
-                controls=[
-                    ft.Text("Dados Gerais", size=16, weight=ft.FontWeight.W_600, color=text_color()),
-                    numero, documento_sei, data_vigencia, objeto, fornecedor
-                ],
+                controls=[ft.Text("Dados Gerais", size=16, weight=ft.FontWeight.W_600, color=text_color()),
+                          numero, documento_sei, data_vigencia, objeto, fornecedor],
                 spacing=10,
             ),
         )
