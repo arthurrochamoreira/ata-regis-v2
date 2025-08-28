@@ -1,5 +1,8 @@
 import math
 import flet as ft
+import re
+from datetime import date, datetime
+from typing import Optional, List
 
 # ==============================
 # TOKENS / CONSTANTES
@@ -93,52 +96,116 @@ ATAS = {
         {
             "numero": "8555/5555",
             "vigencia": "23/12/2026",
-            "objeto": "x",
-            "fornecedor": "JIIJ",
+            "objeto": "Material de escritório",
+            "fornecedor": "JIIJ Comércio",
             "situacao": "Vigente",
             "valorTotal": "R$ 10,00",
             "documentoSei": "56444.444444/4445-55",
-            "itens": [{"descricao": "4", "quantidade": 1, "valorUnitario": "R$ 10,00", "subtotal": "R$ 10,00"}],
-            "contatos": {"telefone": ["(55) 55555-5555"], "email": ["ssssss@gmail.com"]},
+            "itens": [{"descricao": "Caneta esferográfica", "quantidade": 1, "valorUnitario": "R$ 10,00", "subtotal": "R$ 10,00"}],
+            "contatos": {"telefone": ["(55) 55555-5555"], "email": ["contato@jiij.com"]},
         },
     ],
     "vencidas": [
-        {"numero": "4444/4444", "vigencia": "04/01/2025", "objeto": "s", "fornecedor": "44444", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-        {"numero": "0102/0222", "vigencia": "07/01/2024", "objeto": "sabão", "fornecedor": "mac", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
+        {"numero": "4444/4444", "vigencia": "04/01/2025", "objeto": "Serviços de Limpeza", "fornecedor": "Limpa Tudo Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
+        {"numero": "0102/0222", "vigencia": "07/01/2024", "objeto": "Sabão", "fornecedor": "Indústrias Químicas ABC", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
         {"numero": "0014/2024", "vigencia": "31/12/2023", "objeto": "Equipamentos de TI", "fornecedor": "TechCorp Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
     ],
     "aVencer": [
-        {"numero": "0000/1222", "vigencia": "07/11/2025", "objeto": "scanners", "fornecedor": "EPSON", "situacao": "A Vencer", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
+        {"numero": "0000/1222", "vigencia": "07/11/2025", "objeto": "Scanners", "fornecedor": "EPSON", "situacao": "A Vencer", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
     ],
 }
 
 # ==============================
-# FUNÇÕES DE FORMATAÇÃO (Entrada)
+# UTILITÁRIOS: MÁSCARAS E VALIDAÇÕES
 # ==============================
-def format_ata_number(val: str) -> str:
-    if not val:
-        return ""
-    digits = "".join(ch for ch in val if ch.isdigit())
-    if len(digits) > 8:
-        digits = digits[:8]
-    if len(digits) > 4:
-        return f"{digits[:4]}/{digits[4:]}"
-    return digits
+class MaskUtils:
+    @staticmethod
+    def _get_only_digits(text: str) -> str:
+        return re.sub(r'\D', '', text)
 
-def format_sei(val: str) -> str:
-    if not val:
-        return ""
-    digits = "".join(ch for ch in val if ch.isdigit())
-    digits = digits[:17]
-    parts = []
-    if len(digits) > 5:
-        parts.append(digits[:5] + ".")
-    if len(digits) > 11:
-        parts.append(digits[5:11] + "/")
-    if len(digits) > 15:
-        parts.append(digits[11:15] + "-")
-    parts.append(digits[15:17])
-    return "".join(parts).strip(".-/")
+    @staticmethod
+    def aplicar_mascara_numero_ata(text: str) -> str:
+        digits = MaskUtils._get_only_digits(text)
+        if len(digits) > 8:
+            digits = digits[:8]
+        if len(digits) > 4:
+            return f"{digits[:4]}/{digits[4:]}"
+        return digits
+
+    @staticmethod
+    def aplicar_mascara_sei(text: str) -> str:
+        digits = MaskUtils._get_only_digits(text)
+        if len(digits) > 17:
+            digits = digits[:17]
+        
+        if len(digits) > 15:
+            return f"{digits[:5]}.{digits[5:11]}/{digits[11:15]}-{digits[15:]}"
+        if len(digits) > 11:
+            return f"{digits[:5]}.{digits[5:11]}/{digits[11:]}"
+        if len(digits) > 5:
+            return f"{digits[:5]}.{digits[5:]}"
+        return digits
+
+    @staticmethod
+    def aplicar_mascara_telefone(text: str) -> str:
+        digits = MaskUtils._get_only_digits(text)
+        if len(digits) > 11:
+            digits = digits[:11]
+
+        if len(digits) > 10: # Celular (XX) XXXXX-XXXX
+            return f"({digits[:2]}) {digits[2:7]}-{digits[7:]}"
+        if len(digits) > 6: # Telefone (XX) XXXX-XXXX
+            return f"({digits[:2]}) {digits[2:6]}-{digits[6:]}"
+        if len(digits) > 2:
+            return f"({digits[:2]}) {digits[2:]}"
+        return digits
+
+class Validators:
+    @staticmethod
+    def validar_numero_ata(numero: str) -> bool:
+        return bool(re.match(r'^\d{4}/\d{4}$', numero))
+
+    @staticmethod
+    def validar_documento_sei(documento: str) -> bool:
+        return bool(re.match(r'^\d{5}\.\d{6}/\d{4}-\d{2}$', documento))
+
+    @staticmethod
+    def validar_telefone(telefone: str) -> bool:
+        return bool(re.match(r'^\(\d{2}\)\s\d{4,5}-\d{4}$', telefone))
+
+    @staticmethod
+    def validar_email(email: str) -> bool:
+        return bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email))
+
+    @staticmethod
+    def validar_data_vigencia(data_str: str) -> Optional[date]:
+        for fmt in ('%d/%m/%Y', '%Y-%m-%d'):
+            try:
+                return datetime.strptime(data_str, fmt).date()
+            except ValueError:
+                pass
+        return None
+
+    @staticmethod
+    def validar_valor_positivo(valor: str) -> Optional[float]:
+        try:
+            val = float(valor.replace("R$", "").replace(".", "").replace(",", ".").strip())
+            if val > 0:
+                return val
+        except (ValueError, TypeError):
+            return None
+        return None
+
+    @staticmethod
+    def validar_quantidade_positiva(quantidade: str) -> Optional[int]:
+        try:
+            qty = int(quantidade)
+            if qty > 0:
+                return qty
+        except (ValueError, TypeError):
+            return None
+        return None
+
 
 # ==============================
 # APP
@@ -307,7 +374,7 @@ def main(page: ft.Page):
             page.bgcolor = ft.Colors.GREY_100
             theme_icon.name = "dark_mode"
             theme_text.value = "Modo Escuro"
-        update_theme_colors()
+        update_theme_Colors()
 
     def make_item(key: str, icon_name: str, label: str, active=False):
         icon = ft.Icon(icon_name, size=ICON_SIZE)
@@ -356,14 +423,20 @@ def main(page: ft.Page):
         update_item_visual(key)
         return wrapper
 
-    # ---------------- THEME / COLORS UPDATE ----------------
-    def update_theme_colors():
+    # ---------------- THEME / Colors UPDATE ----------------
+    def update_theme_Colors():
         root.bgcolor = ft.Colors.GREY_900 if is_dark() else ft.Colors.WHITE
         divider_top.bgcolor = divider_color()
         title_text.color = text_color()
         for k in items:
             update_item_visual(k)
-        page.update()
+        # Atualiza a view atual para refletir as mudanças de cor
+        if state["active"] == "dashboard":
+            set_content(DashboardView())
+        elif state["active"] == "atas":
+            set_content(AtasPage())
+        else:
+             page.update()
 
     # ==============================
     # DASHBOARD VIEW
@@ -783,6 +856,7 @@ def main(page: ft.Page):
             text="Nova Ata",
             icon="add",
             height=_cfg["h"],
+            on_click=lambda _: show_ata_edit({}), # Abre formulário vazio
             style=ft.ButtonStyle(
                 padding=_pad,
                 shape=ft.RoundedRectangleBorder(radius=999),
@@ -887,8 +961,8 @@ def main(page: ft.Page):
                     ft.Row([ft.Icon("person", color=text_muted()), ft.Text("Fornecedor", size=16, weight=ft.FontWeight.W_600, color=text_color())], spacing=8),
                     ft.Column(controls=[
                         ft.Text(f"Nome: {ata.get('fornecedor')}", color=text_muted()),
-                        ft.Row([ft.Icon("call", size=16, color=text_muted()), ft.Text(", ".join(ata['contatos'].get('telefone') or ['—']), color=text_muted())]),
-                        ft.Row([ft.Icon("mail", size=16, color=text_muted()), ft.Text(", ".join(ata['contatos'].get('email') or ['—']), color=text_muted())]),
+                        ft.Row([ft.Icon("call", size=16, color=text_muted()), ft.Text(", ".join(ata.get('contatos', {}).get('telefone') or ['—']), color=text_muted())]),
+                        ft.Row([ft.Icon("mail", size=16, color=text_muted()), ft.Text(", ".join(ata.get('contatos', {}).get('email') or ['—']), color=text_muted())]),
                     ], spacing=6)
                 ], spacing=10
             ),
@@ -920,7 +994,7 @@ def main(page: ft.Page):
                 ft.Container(
                     padding=ft.padding.only(top=12),
                     content=ft.Row(controls=[ft.Text("Valor Total", weight=ft.FontWeight.W_600, color=text_muted()),
-                                             ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
+                                              ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
                                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                 ),
             ], spacing=10),
@@ -931,106 +1005,183 @@ def main(page: ft.Page):
 
     # --------- Edição ---------
     def show_ata_edit(ata: dict):
+        is_new = not bool(ata)
+        
+        # --- Definição dos campos ---
         numero = tf(label="Número da Ata", value=ata.get("numero", ""))
         documento_sei = tf(label="Documento SEI", value=ata.get("documentoSei", ""))
-        data_vigencia = tf(label="Data de Vigência", value=ata.get("vigencia", ""))
+        data_vigencia = tf(label="Data de Vigência (DD/MM/AAAA)", value=ata.get("vigencia", ""))
         objeto = tf(label="Objeto", value=ata.get("objeto", ""))
         fornecedor = tf(label="Fornecedor", value=ata.get("fornecedor", ""))
 
+        # --- Aplicação das máscaras ---
         def on_num_change(e):
-            e.control.value = format_ata_number(e.control.value)
-            page.update()
+            e.control.value = MaskUtils.aplicar_mascara_numero_ata(e.control.value)
+            e.control.update()
         numero.on_change = on_num_change
 
         def on_sei_change(e):
-            e.control.value = format_sei(e.control.value)
-            page.update()
+            e.control.value = MaskUtils.aplicar_mascara_sei(e.control.value)
+            e.control.update()
         documento_sei.on_change = on_sei_change
 
-        tels = [tf(label=f"Telefone {i+1}", value=v, prefix_icon=ft.Icons.PHONE) for i, v in enumerate(ata["contatos"].get("telefone") or [])]
-        emails = [tf(label=f"E-mail {i+1}", value=v, prefix_icon=ft.Icons.MAIL) for i, v in enumerate(ata["contatos"].get("email") or [])]
+        def on_tel_change(e):
+            e.control.value = MaskUtils.aplicar_mascara_telefone(e.control.value)
+            e.control.update()
+
+        # --- Listas dinâmicas de campos ---
+        tels_data = ata.get("contatos", {}).get("telefone", [""])
+        tels_controls = [tf(label=f"Telefone {i+1}", value=v, prefix_icon=ft.Icons.PHONE, on_change=on_tel_change) for i, v in enumerate(tels_data)]
+        
+        emails_data = ata.get("contatos", {}).get("email", [""])
+        emails_controls = [tf(label=f"E-mail {i+1}", value=v, prefix_icon=ft.Icons.MAIL) for i, v in enumerate(emails_data)]
+
+        itens_data = ata.get("itens", [])[:] if ata.get("itens") else [{"descricao": "", "quantidade": "", "valorUnitario": ""}]
+        itens_fields_controls = []
+
+        # --- Lógica de validação do formulário ---
+        def validate_form(e):
+            # Limpa erros anteriores
+            all_fields = [numero, documento_sei, data_vigencia, objeto, fornecedor] + \
+                         tels_controls + emails_controls + \
+                         [item for row in itens_fields_controls for item in row.controls if isinstance(item, ft.TextField)]
+            
+            for field in all_fields:
+                field.error_text = None
+
+            is_valid = True
+
+            # Validações individuais
+            if not numero.value or not Validators.validar_numero_ata(numero.value):
+                numero.error_text = "Formato esperado: 0000/0000"
+                is_valid = False
+            
+            if not documento_sei.value or not Validators.validar_documento_sei(documento_sei.value):
+                documento_sei.error_text = "Formato esperado: 00000.000000/0000-00"
+                is_valid = False
+            
+            if not data_vigencia.value or not Validators.validar_data_vigencia(data_vigencia.value):
+                data_vigencia.error_text = "Data inválida. Use DD/MM/AAAA."
+                is_valid = False
+
+            if not objeto.value.strip():
+                objeto.error_text = "O objeto não pode ser vazio."
+                is_valid = False
+            
+            if not fornecedor.value.strip():
+                fornecedor.error_text = "O fornecedor não pode ser vazio."
+                is_valid = False
+
+            # Valida contatos
+            telefones_validos = [tel for tel in tels_controls if tel.value and Validators.validar_telefone(tel.value)]
+            if not telefones_validos:
+                is_valid = False
+                for tel in tels_controls:
+                    if not tel.value or not Validators.validar_telefone(tel.value):
+                        tel.error_text = "Telefone inválido ou vazio."
+
+            emails_validos = [email for email in emails_controls if email.value and Validators.validar_email(email.value)]
+            if not emails_validos:
+                is_valid = False
+                for email in emails_controls:
+                     if not email.value or not Validators.validar_email(email.value):
+                        email.error_text = "E-mail inválido ou vazio."
+            
+            # Valida itens
+            for row in itens_fields_controls:
+                desc_field, qtd_field, vu_field = row.controls[0], row.controls[1], row.controls[2]
+                if not desc_field.value.strip():
+                    desc_field.error_text = "Obrigatório"
+                    is_valid = False
+                if not Validators.validar_quantidade_positiva(qtd_field.value):
+                    qtd_field.error_text = "Inválido"
+                    is_valid = False
+                if not Validators.validar_valor_positivo(vu_field.value):
+                    vu_field.error_text = "Inválido"
+                    is_valid = False
+
+            page.update()
+
+            if is_valid:
+                show_snack("Ata salva com sucesso!")
+                set_content(AtasPage())
+
+        # --- Funções para UI dinâmica ---
+        def build_item_row(idx, item_data):
+            desc = tf(label="Descrição", value=item_data.get("descricao", ""), expand=True)
+            qtd = tf(label="Qtd.", value=str(item_data.get("quantidade", "")), width=80)
+            vu = tf(label="Valor Unit.", value=item_data.get("valorUnitario", ""), width=120)
+            
+            def delete_item_row(e, row_to_delete):
+                itens_fields_controls.remove(row_to_delete)
+                refresh_ui()
+
+            row = ft.Row([desc, qtd, vu], spacing=8, alignment=ft.MainAxisAlignment.START)
+            del_btn = ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, r=row: delete_item_row(e, r))
+            row.controls.append(del_btn)
+            return row
+
+        for i, it in enumerate(itens_data):
+            itens_fields_controls.append(build_item_row(i, it))
 
         def add_tel(e):
-            tels.append(tf(label=f"Telefone {len(tels)+1}", value="", prefix_icon=ft.Icons.PHONE))
-            refresh()
+            tels_controls.append(tf(label=f"Telefone {len(tels_controls)+1}", value="", prefix_icon=ft.Icons.PHONE, on_change=on_tel_change))
+            refresh_ui()
 
         def add_email(e):
-            emails.append(tf(label=f"E-mail {len(emails)+1}", value="", prefix_icon=ft.Icons.MAIL))
-            refresh()
-
-        itens = ata.get("itens")[:] if ata.get("itens") else [{"descricao": "", "quantidade": "", "valorUnitario": ""}]
-        itens_fields = []
-        def build_item_row(idx, item):
-            desc = tf(label="Descrição", value=item.get("descricao", ""), expand=True)
-            qtd = tf(label="Qtd.", value=str(item.get("quantidade", "")), width=80)
-            vu = tf(label="Valor Unit.", value=item.get("valorUnitario", ""), width=120)
-            del_btn = ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, i=idx: confirm_delete("item", i))
-            return ft.Row([desc, qtd, vu, del_btn], spacing=8)
-
-        for i, it in enumerate(itens):
-            itens_fields.append(build_item_row(i, it))
-
+            emails_controls.append(tf(label=f"E-mail {len(emails_controls)+1}", value="", prefix_icon=ft.Icons.MAIL))
+            refresh_ui()
+        
         def add_item(e):
-            itens.append({"descricao": "", "quantidade": "", "valorUnitario": ""})
-            itens_fields.append(build_item_row(len(itens_fields), itens[-1]))
-            refresh()
+            itens_fields_controls.append(build_item_row(len(itens_fields_controls), {}))
+            refresh_ui()
 
-        dlg = ft.AlertDialog(modal=True, title=ft.Text("Confirmar exclusão"), content=ft.Text("Tem certeza de que deseja excluir este item?"), actions=[])
-        delete_ctx = {"type": None, "index": None}
+        def refresh_ui():
+            # Renomeia labels e recria a lista de controles com botões de exclusão
+            def create_deletable_row(ctrl_list, ctrl, index, kind):
+                def delete_control(e):
+                    ctrl_list.pop(index)
+                    refresh_ui()
+                return ft.Row([ctrl, ft.IconButton(icon="delete", tooltip="Excluir", on_click=delete_control)], spacing=8)
+            
+            for i, tel in enumerate(tels_controls):
+                tel.label = f"Telefone {i+1}"
+            
+            for i, email in enumerate(emails_controls):
+                email.label = f"E-mail {i+1}"
 
-        def confirm_delete(kind, idx):
-            delete_ctx["type"] = kind; delete_ctx["index"] = idx
-            dlg.actions = [
-                pill_button("Cancelar", variant="text", on_click=lambda e: page.close(dlg)),
-                pill_button("Excluir", icon="delete", variant="filled", on_click=do_delete),
-            ]
-            page.open(dlg)
-
-        def do_delete(e):
-            if delete_ctx["type"] == "telefone":
-                if 0 <= delete_ctx["index"] < len(tels):
-                    dels = delete_ctx["index"]
-                    tels.pop(dels)
-                    for i, t in enumerate(tels): t.label = f"Telefone {i+1}"
-            elif delete_ctx["type"] == "email":
-                if 0 <= delete_ctx["index"] < len(emails):
-                    dels = delete_ctx["index"]; emails.pop(dels)
-                    for i, t in enumerate(emails): t.label = f"E-mail {i+1}"
-            elif delete_ctx["type"] == "item":
-                if 0 <= delete_ctx["index"] < len(itens_fields):
-                    idx = delete_ctx["index"]
-                    itens_fields.pop(idx)
-            page.close(dlg)
-            refresh()
-
-        def refresh():
             contacts_col.controls = [
                 ft.Row(
                     [ft.Text("Contatos", size=16, weight=ft.FontWeight.W_600, color=text_color()),
-                     pill_button("Adicionar telefone", icon="add", variant="text", size="sm", on_click=add_tel),
-                     pill_button("Adicionar e-mail", icon="add", variant="text", size="sm", on_click=add_email)],
+                     ft.Row([
+                         pill_button("Adicionar telefone", icon="add", variant="text", size="sm", on_click=add_tel),
+                         pill_button("Adicionar e-mail", icon="add", variant="text", size="sm", on_click=add_email),
+                     ], spacing=4)
+                    ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                 ),
-                ft.Column([ft.Row([t, ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, i=i: confirm_delete("telefone", i))], spacing=8) for i, t in enumerate(tels)], spacing=8),
-                ft.Column([ft.Row([m, ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, i=i: confirm_delete("email", i))], spacing=8) for i, m in enumerate(emails)], spacing=8),
+                ft.Column([create_deletable_row(tels_controls, t, i, "telefone") for i, t in enumerate(tels_controls)], spacing=8),
+                ft.Column([create_deletable_row(emails_controls, m, i, "email") for i, m in enumerate(emails_controls)], spacing=8),
             ]
+            
             itens_col.controls = [
                 ft.Row(
                     [ft.Text("Itens", size=16, weight=ft.FontWeight.W_600, color=text_color()),
                      pill_button("Adicionar", icon="add", variant="outlined", size="sm", on_click=add_item)],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                 ),
-                ft.Column(itens_fields, spacing=8)
+                ft.Column(itens_fields_controls, spacing=8)
             ]
             page.update()
 
+        # --- Layout do formulário ---
         header = ft.Row(
             controls=[
                 ft.Column([ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color()),
-                           ft.Text("Editar Ata", size=13, color=text_muted())], spacing=2, expand=True),
+                           ft.Text("Editar Ata" if not is_new else "Nova Ata", size=13, color=text_muted())], spacing=2, expand=True),
                 ft.Row([
                     pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: set_content(AtasPage())),
-                    pill_button("Salvar", icon="save", variant="filled", on_click=lambda e: (show_snack("Ata salva com sucesso!"), set_content(AtasPage()))),
+                    pill_button("Salvar", icon="save", variant="filled", on_click=validate_form),
                 ], spacing=8),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
@@ -1059,10 +1210,10 @@ def main(page: ft.Page):
 
         view = ft.Column(controls=[header, grid_top, itens_card], spacing=16)
         set_content(view)
-        refresh()
+        refresh_ui()
 
     def show_snack(msg: str):
-        page.snack_bar = ft.SnackBar(ft.Text(msg))
+        page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=ft.Colors.GREEN_700)
         page.snack_bar.open = True
         page.update()
 
@@ -1081,8 +1232,8 @@ def main(page: ft.Page):
     # ASIDE (MENU)
     # ==============================
     top_logo = ft.Container(height=56, alignment=ft.alignment.center,
-                            content=ft.Icon("diamond", size=ICON_SIZE, color=ft.Colors.GREY_500),
-                            padding=ft.padding.only(top=8, bottom=8))
+                             content=ft.Icon("diamond", size=ICON_SIZE, color=ft.Colors.GREY_500),
+                             padding=ft.padding.only(top=8, bottom=8))
     menu_icon = ft.Icon("menu", size=ICON_SIZE, rotate=ft.Rotate(0, alignment=ft.alignment.center), animate_rotation=ANIM)
     header_btn = ft.Container(
         content=ft.Row(
@@ -1144,7 +1295,7 @@ def main(page: ft.Page):
             update_item_visual(k)
     init_state()
     set_content(DashboardView())
-    update_theme_colors()
+    update_theme_Colors()
 
     page.add(ft.Row(controls=[root, content], expand=True, vertical_alignment=ft.CrossAxisAlignment.START))
 
