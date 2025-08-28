@@ -994,8 +994,8 @@ def main(page: ft.Page):
                 ft.Container(
                     padding=ft.padding.only(top=12),
                     content=ft.Row(controls=[ft.Text("Valor Total", weight=ft.FontWeight.W_600, color=text_muted()),
-                                              ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
-                                   alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                                             ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
+                                      alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                 ),
             ], spacing=10),
         )
@@ -1007,10 +1007,22 @@ def main(page: ft.Page):
     def show_ata_edit(ata: dict):
         is_new = not bool(ata)
         
-        # --- Definição dos campos ---
-        numero = tf(label="Número da Ata", value=ata.get("numero", ""))
-        documento_sei = tf(label="Documento SEI", value=ata.get("documentoSei", ""))
-        data_vigencia = tf(label="Data de Vigência (DD/MM/AAAA)", value=ata.get("vigencia", ""))
+        # --- Definição dos campos com HINT_TEXT ---
+        numero = tf(
+            label="Número da Ata", 
+            value=ata.get("numero", ""),
+            hint_text="0000/0000"
+        )
+        documento_sei = tf(
+            label="Documento SEI", 
+            value=ata.get("documentoSei", ""),
+            hint_text="00000.000000/0000-00"
+        )
+        data_vigencia = tf(
+            label="Data de Vigência", 
+            value=ata.get("vigencia", ""),
+            hint_text="DD/MM/AAAA"
+        )
         objeto = tf(label="Objeto", value=ata.get("objeto", ""))
         fornecedor = tf(label="Fornecedor", value=ata.get("fornecedor", ""))
 
@@ -1031,10 +1043,25 @@ def main(page: ft.Page):
 
         # --- Listas dinâmicas de campos ---
         tels_data = ata.get("contatos", {}).get("telefone", [""])
-        tels_controls = [tf(label=f"Telefone {i+1}", value=v, prefix_icon=ft.Icons.PHONE, on_change=on_tel_change) for i, v in enumerate(tels_data)]
+        tels_controls = [
+            tf(
+                label=f"Telefone {i+1}", 
+                value=v, 
+                prefix_icon=ft.Icons.PHONE, 
+                on_change=on_tel_change,
+                hint_text="(XX) XXXXX-XXXX"
+            ) for i, v in enumerate(tels_data)
+        ]
         
         emails_data = ata.get("contatos", {}).get("email", [""])
-        emails_controls = [tf(label=f"E-mail {i+1}", value=v, prefix_icon=ft.Icons.MAIL) for i, v in enumerate(emails_data)]
+        emails_controls = [
+            tf(
+                label=f"E-mail {i+1}", 
+                value=v, 
+                prefix_icon=ft.Icons.MAIL,
+                hint_text="exemplo@email.com"
+            ) for i, v in enumerate(emails_data)
+        ]
 
         itens_data = ata.get("itens", [])[:] if ata.get("itens") else [{"descricao": "", "quantidade": "", "valorUnitario": ""}]
         itens_fields_controls = []
@@ -1084,8 +1111,8 @@ def main(page: ft.Page):
             if not emails_validos:
                 is_valid = False
                 for email in emails_controls:
-                     if not email.value or not Validators.validar_email(email.value):
-                        email.error_text = "E-mail inválido ou vazio."
+                        if not email.value or not Validators.validar_email(email.value):
+                            email.error_text = "E-mail inválido ou vazio."
             
             # Valida itens
             for row in itens_fields_controls:
@@ -1125,11 +1152,26 @@ def main(page: ft.Page):
             itens_fields_controls.append(build_item_row(i, it))
 
         def add_tel(e):
-            tels_controls.append(tf(label=f"Telefone {len(tels_controls)+1}", value="", prefix_icon=ft.Icons.PHONE, on_change=on_tel_change))
+            tels_controls.append(
+                tf(
+                    label=f"Telefone {len(tels_controls)+1}", 
+                    value="", 
+                    prefix_icon=ft.Icons.PHONE, 
+                    on_change=on_tel_change,
+                    hint_text="(XX) XXXXX-XXXX"
+                )
+            )
             refresh_ui()
 
         def add_email(e):
-            emails_controls.append(tf(label=f"E-mail {len(emails_controls)+1}", value="", prefix_icon=ft.Icons.MAIL))
+            emails_controls.append(
+                tf(
+                    label=f"E-mail {len(emails_controls)+1}", 
+                    value="", 
+                    prefix_icon=ft.Icons.MAIL,
+                    hint_text="exemplo@email.com"
+                )
+            )
             refresh_ui()
         
         def add_item(e):
@@ -1225,15 +1267,15 @@ def main(page: ft.Page):
             ft.Container(
                 bgcolor=surface_bg(), border_radius=16, padding=16,
                 content=ft.Column(controls=[ft.Text(title, size=18, weight=ft.FontWeight.W_600, color=text_color()),
-                                             ft.Text(subtitle, color=text_muted())], spacing=6))
+                                            ft.Text(subtitle, color=text_muted())], spacing=6))
         ])
 
     # ==============================
     # ASIDE (MENU)
     # ==============================
     top_logo = ft.Container(height=56, alignment=ft.alignment.center,
-                             content=ft.Icon("diamond", size=ICON_SIZE, color=ft.Colors.GREY_500),
-                             padding=ft.padding.only(top=8, bottom=8))
+                                      content=ft.Icon("diamond", size=ICON_SIZE, color=ft.Colors.GREY_500),
+                                      padding=ft.padding.only(top=8, bottom=8))
     menu_icon = ft.Icon("menu", size=ICON_SIZE, rotate=ft.Rotate(0, alignment=ft.alignment.center), animate_rotation=ANIM)
     header_btn = ft.Container(
         content=ft.Row(
