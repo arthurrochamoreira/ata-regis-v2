@@ -652,65 +652,62 @@ def main(page: ft.Page):
 
 
         # --- Ações (Button Group + Primário) ---
+        # --- Ações (grupo + primário), alinhadas à direita ---
         _cfg = PILL["md"]
         _pad = ft.padding.symmetric(vertical=0, horizontal=_cfg["px"])
 
-
-        actions = ft.Row(
+        btn_group = ft.Row(
+            spacing=0,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                # Button Group (pill/outline): Filtrar + Ordenar
-                ft.Row(
-                    spacing=0,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                    controls=[
-                        ft.OutlinedButton(
-                            text="Filtrar",
-                            icon="filter_list",
-                            height=_cfg["h"],
-                            style=ft.ButtonStyle(
-                                padding=_pad,
-                                shape=ft.RoundedRectangleBorder(
-                                    radius=ft.border_radius.only(
-                                        top_left=999, bottom_left=999, top_right=0, bottom_right=0
-                                    )
-                                ),
-                                side=ft.BorderSide(BORDER_WIDTH, border_token()),
-                            ),
-                        ),
-                        ft.OutlinedButton(
-                            text="Ordenar",
-                            icon="sort",
-                            height=_cfg["h"],
-                            style=ft.ButtonStyle(
-                                padding=_pad,
-                                shape=ft.RoundedRectangleBorder(
-                                    radius=ft.border_radius.only(
-                                        top_left=0, bottom_left=0, top_right=999, bottom_right=999
-                                    )
-                                ),
-                                side=ft.BorderSide(BORDER_WIDTH, border_token()),
-                            ),
-                        ),
-                    ],
-                ),
-
-                # Botão primário destacado: Nova Ata (azul sólido)
-                ft.FilledButton(
-                    text="Nova Ata",
-                    icon="add",
+                ft.OutlinedButton(
+                    text="Filtrar",
+                    icon="filter_list",
                     height=_cfg["h"],
                     style=ft.ButtonStyle(
                         padding=_pad,
-                        shape=ft.RoundedRectangleBorder(radius=999),
-                        bgcolor=ft.Colors.BLUE_600,
-                        color=ft.Colors.WHITE,
+                        shape=ft.RoundedRectangleBorder(
+                            radius=ft.border_radius.only(
+                                top_left=999, bottom_left=999, top_right=0, bottom_right=0
+                            )
+                        ),
+                        side=ft.BorderSide(BORDER_WIDTH, border_token()),
+                    ),
+                ),
+                ft.OutlinedButton(
+                    text="Ordenar",
+                    icon="sort",
+                    height=_cfg["h"],
+                    style=ft.ButtonStyle(
+                        padding=_pad,
+                        shape=ft.RoundedRectangleBorder(
+                            radius=ft.border_radius.only(
+                                top_left=0, bottom_left=0, top_right=999, bottom_right=999
+                            )
+                        ),
+                        side=ft.BorderSide(BORDER_WIDTH, border_token()),
                     ),
                 ),
             ],
+        )
+
+        btn_new = ft.FilledButton(
+            text="Nova Ata",
+            icon="add",
+            height=_cfg["h"],
+            style=ft.ButtonStyle(
+                padding=_pad,
+                shape=ft.RoundedRectangleBorder(radius=999),
+                bgcolor=ft.Colors.BLUE_600,
+                color=ft.Colors.WHITE,
+            ),
+        )
+
+        actions = ft.Row(
+            controls=[btn_group, btn_new],
             spacing=8,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
-
 
         top = ft.Container(
             bgcolor=surface_bg(),
@@ -720,14 +717,18 @@ def main(page: ft.Page):
                 blur_radius=12, spread_radius=1,
                 color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK),
             ),
-            content=ft.ResponsiveRow(
-                columns=12,
+            content=ft.Row(
                 controls=[
-                    ft.Container(content=ft.Row([search], spacing=8), col={"xs":12, "md":7}),
-                    ft.Container(content=actions, col={"xs":12, "md":5}, alignment=ft.alignment.center_right),
+                    ft.Container(content=search, expand=True),
+                    actions,  # fica à direita, fora do TextField
                 ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=12,
             ),
         )
+
+
 
         grid = ft.ResponsiveRow(
             columns=12, spacing=16, run_spacing=16,
