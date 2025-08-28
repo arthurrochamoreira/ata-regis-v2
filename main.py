@@ -36,10 +36,32 @@ TXT_ACTIVE_DARK  = "#E9D5FF"
 
 # Paleta do dashboard
 CHART_GREEN = "#10B981"   # GREEN-500
-CHART_AMBER = "#F59E0B"   # amber-500
+CHART_AMBER = "#FF6F00"   # amber-500
 CHART_RED   = "#EF4444"   # red-500
 CHART_GRAY_LIGHT = "#E5E7EB"  # gray-200
 CHART_GRAY_DARK  = "#334155"  # slate-700
+
+# Dicionário de cores para os cards das atas - AGORA USANDO A MESMA LÓGICA DO BADGE
+ATA_CARD_PALETTE = {
+    "green": {
+        "bg_light": ft.Colors.GREEN_100,
+        "bg_dark": ft.Colors.GREEN_900,
+        "icon_color": ft.Colors.GREEN_800,
+        "icon_color_dark": ft.Colors.GREEN_100,
+    },
+    "amber": {
+        "bg_light": ft.Colors.AMBER_100,
+        "bg_dark": ft.Colors.AMBER_900,
+        "icon_color": ft.Colors.AMBER_900,
+        "icon_color_dark": ft.Colors.AMBER_100,
+    },
+    "red": {
+        "bg_light": ft.Colors.RED_100,
+        "bg_dark": ft.Colors.RED_900,
+        "icon_color": ft.Colors.RED_800,
+        "icon_color_dark": ft.Colors.RED_100,
+    },
+}
 
 # ==== TOKENS DE BORDA (Design System) ====
 BORDER_COLOR_LIGHT = ft.Colors.GREY_600
@@ -201,7 +223,7 @@ def main(page: ft.Page):
     def set_content(view):
         content_col.controls = [view]
         page.update()
-
+    
     # ---------------- MENU (com barrinha integrada) ----------------
     def update_item_visual(key: str):
         ref = items[key]
@@ -468,25 +490,46 @@ def main(page: ft.Page):
             return "amber"
         return "red"
 
-    def AtasSectionCard(title: str, icon_name: str, data: list[dict]):
+    def AtasSectionCard(title: str, icon_name: str, data: list[dict], variant: str | None = None):
         def vsep(h=28):
             return ft.Container(width=1, height=h, bgcolor=divider_color())
 
+        # --- Inferência robusta do variant (case-insensitive) ---
+        if not variant:
+            t = (title or "").lower()
+            if "vigentes" in t:
+                variant = "green"
+            elif "a vencer" in t or "à vencer" in t:
+                variant = "amber"
+            elif "vencidas" in t:
+                variant = "red"
+            else:
+                variant = "red"  # fallback seguro
+
+        # --- Paleta de cores do card (tema-aware) ---
+        palette = ATA_CARD_PALETTE[variant]
+        bg_color = palette["bg_dark"] if is_dark() else palette["bg_light"]
+        icon_color = palette["icon_color_dark"] if is_dark() else palette["icon_color"]
+
+        # --- Cabeçalho do card ---
         header = ft.Row(
             alignment=ft.MainAxisAlignment.START,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=10,
             controls=[
                 ft.Container(
-                    width=28, height=28, border_radius=999,
-                    bgcolor=ft.Colors.with_opacity(0.08, ft.Colors.BLACK),
+                    width=28,
+                    height=28,
+                    border_radius=999,
+                    bgcolor=bg_color,
                     alignment=ft.alignment.center,
-                    content=ft.Icon(icon_name, size=18, color=text_muted()),
+                    content=ft.Icon(icon_name, size=18, color=icon_color),
                 ),
                 ft.Text(title, size=16, weight=ft.FontWeight.W_600, color=text_color()),
             ],
         )
 
+        # --- Cabeçalho da tabela ---
         cols_head = ft.Container(
             padding=ft.padding.symmetric(vertical=10, horizontal=12),
             bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.BLACK),
@@ -507,9 +550,10 @@ def main(page: ft.Page):
                     vsep(),
                     ft.Container(ft.Text("AÇÕES", size=11, color=text_muted()), width=140, alignment=ft.alignment.center),
                 ],
-            )
+            ),
         )
 
+        # --- Linhas da tabela ---
         rows_ui = []
         for ata in data:
             rows_ui.append(
@@ -519,15 +563,19 @@ def main(page: ft.Page):
                         spacing=8,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
-                            ft.Container(ft.Text(ata["numero"], color=text_color()), expand=2, alignment=ft.alignment.center),
+                            ft.Container(ft.Text(ata.get("numero", ""), color=text_color()), expand=2, alignment=ft.alignment.center),
                             vsep(24),
-                            ft.Container(ft.Text(ata["vigencia"], color=text_muted()), expand=2, alignment=ft.alignment.center),
+                            ft.Container(ft.Text(ata.get("vigencia", ""), color=text_muted()), expand=2, alignment=ft.alignment.center),
                             vsep(24),
-                            ft.Container(ft.Text(ata["objeto"], color=text_muted()), expand=3, alignment=ft.alignment.center),
+                            ft.Container(ft.Text(ata.get("objeto", ""), color=text_muted()), expand=3, alignment=ft.alignment.center),
                             vsep(24),
-                            ft.Container(ft.Text(ata["fornecedor"], color=text_muted()), expand=3, alignment=ft.alignment.center),
+                            ft.Container(ft.Text(ata.get("fornecedor", ""), color=text_muted()), expand=3, alignment=ft.alignment.center),
                             vsep(24),
-                            ft.Container(badge(ata["situacao"], situacao_to_variant(ata["situacao"])), expand=2, alignment=ft.alignment.center),
+                            ft.Container(
+                                badge(ata.get("situacao", ""), situacao_to_variant(ata.get("situacao", ""))),
+                                expand=2,
+                                alignment=ft.alignment.center,
+                            ),
                             vsep(24),
                             ft.Container(
                                 alignment=ft.alignment.center,
@@ -536,9 +584,9 @@ def main(page: ft.Page):
                                     spacing=6,
                                     alignment=ft.MainAxisAlignment.CENTER,
                                     controls=[
-                                        ft.IconButton(icon="visibility", tooltip="Ver",   on_click=lambda e, a=ata: show_ata_details(a)),
-                                        ft.IconButton(icon="edit",       tooltip="Editar", on_click=lambda e, a=ata: show_ata_edit(a)),
-                                        ft.IconButton(icon="delete",     tooltip="Excluir", icon_color=ft.Colors.RED_400),
+                                        ft.IconButton(icon="visibility", tooltip="Ver", on_click=lambda e, a=ata: show_ata_details(a)),
+                                        ft.IconButton(icon="edit", tooltip="Editar", on_click=lambda e, a=ata: show_ata_edit(a)),
+                                        ft.IconButton(icon="delete", tooltip="Excluir", icon_color=ft.Colors.RED_400),
                                     ],
                                 ),
                             ),
@@ -547,13 +595,15 @@ def main(page: ft.Page):
                 )
             )
 
+        # --- Container final do card ---
         return ft.Container(
             col=12,
             bgcolor=surface_bg(),
             border_radius=16,
             padding=16,
             shadow=ft.BoxShadow(
-                blur_radius=16, spread_radius=1,
+                blur_radius=16,
+                spread_radius=1,
                 color=ft.Colors.with_opacity(0.10, ft.Colors.BLACK),
             ),
             content=ft.Column(
@@ -561,6 +611,7 @@ def main(page: ft.Page):
                 controls=[header, cols_head, *rows_ui] if data else [header, ft.Text("Nenhum registro.", color=text_muted())],
             ),
         )
+
 
     def AtasPage():
         # Barra de busca (altura igual à pílula "md")
@@ -607,9 +658,10 @@ def main(page: ft.Page):
             columns=12, spacing=16, run_spacing=16,
             controls=[
                 ft.Container(content=top, col=12),
-                AtasSectionCard("Atas Vigentes", "check_circle", ATAS["vigentes"]),
-                AtasSectionCard("Atas Vencidas", "cancel", ATAS["vencidas"]),
-                AtasSectionCard("Atas a Vencer", "schedule", ATAS["aVencer"]),
+                # Onde monta a grid de cards:
+                AtasSectionCard("Atas Vigentes", "check_circle", ATAS["vigentes"], variant="green"),
+                AtasSectionCard("Atas Vencidas", "cancel", ATAS["vencidas"], variant="red"),
+                AtasSectionCard("Atas a Vencer", "schedule", ATAS["aVencer"], variant="amber"),
             ],
         )
         return grid
