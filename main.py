@@ -663,6 +663,7 @@ def main(page: ft.Page):
         def _filters_count() -> int:
             f = state["filters"]
             return int(bool(f["vigente"])) + int(bool(f["vencida"])) + int(bool(f["a_vencer"]))
+
         def _filter_label() -> str:
             n = _filters_count()
             return f"Filtrar ({n})" if n else "Filtrar"
@@ -695,10 +696,9 @@ def main(page: ft.Page):
         def _on_filter_clear(_=None):
             state["filters"] = {"vigente": False, "vencida": False, "a_vencer": False}
             _sync_checkboxes()
-            _update_label()  # mantém o menu aberto
+            _update_label()
 
         def _on_filter_apply(_=None):
-            # refaz a view com os filtros aplicados
             set_content(AtasPage())
 
         # Conteúdo do menu de filtros
@@ -728,39 +728,37 @@ def main(page: ft.Page):
             ),
         )
 
-        # ===== Botão de FILTRO com aparência idêntica ao OutlinedButton =====
-        # Usamos SubmenuButton (abre o menu) dentro de um Container com borda/raio/padding
-        filter_btn_shell = ft.Container(
-            height=_cfg["h"],
-            padding=_pad,
-            alignment=ft.alignment.center,
-            border=ft.border.only(
-                left=ft.BorderSide(BORDER_WIDTH, border_token()),
-                top=ft.BorderSide(BORDER_WIDTH, border_token()),
-                bottom=ft.BorderSide(BORDER_WIDTH, border_token()),
-                right=ft.BorderSide(0, border_token()),  # sem borda direita para não duplicar a junta
-            ),
-            border_radius=ft.border_radius.only(top_left=999, bottom_left=999, top_right=0, bottom_right=0),
-            content=ft.SubmenuButton(
-                # O clique no SubmenuButton abre o menu
-                controls=[ft.MenuItemButton(close_on_click=False, content=menu_box)],
-                # conteúdo visual do "botão"
-                content=ft.Row(
-                    spacing=8,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                    controls=[
-                        ft.Icon("filter_list", size=18, color=text_color()),
-                        lbl_filter,
-                    ],
+        # ===== Botão de FILTRO com a borda de pílula à esquerda =====
+        # Usamos SubmenuButton com estilo de OutlinedButton
+        filter_btn = ft.SubmenuButton(
+            height=_cfg["h"],  # <--- CORRIGIDO: height movido para o botão
+            style=ft.ButtonStyle(
+                padding=_pad,
+                shape=ft.RoundedRectangleBorder(
+                    radius=ft.border_radius.only(top_left=999, bottom_left=999, top_right=0, bottom_right=0)
                 ),
+                side=ft.BorderSide(BORDER_WIDTH, border_token()),
+                color=text_color(),
+                icon_color=text_color(),
+            ),
+            # O clique no SubmenuButton abre o menu
+            controls=[ft.MenuItemButton(close_on_click=False, content=menu_box)],
+            # Conteúdo visual do "botão"
+            content=ft.Row(
+                spacing=8,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    ft.Icon("filter_list", size=18, color=text_color()),
+                    lbl_filter,
+                ],
             ),
         )
 
-        # Botão "Ordenar" (Outlined), grudadinho no filtro
+        # Botão "Ordenar" (Outlined)
         btn_sort = ft.OutlinedButton(
             text="Ordenar",
             icon="sort",
-            height=_cfg["h"],
+            height=_cfg["h"],  # <--- CORRIGIDO: height movido para o botão
             style=ft.ButtonStyle(
                 padding=_pad,
                 shape=ft.RoundedRectangleBorder(
@@ -773,9 +771,9 @@ def main(page: ft.Page):
         )
 
         btn_group = ft.Row(
-            spacing=0,
+            spacing=-1,
+            controls=[filter_btn, btn_sort],
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[filter_btn_shell, btn_sort],  # aparência contínua, junta de 1px
         )
 
         # Botão primário "Nova Ata"
@@ -814,7 +812,7 @@ def main(page: ft.Page):
         )
 
         # === FILTROS: decide quais cards mostrar ===
-        f = state["filters"]
+        f = state.get("filters", {"vigente": False, "vencida": False, "a_vencer": False})
         show_all = not any(f.values())
         cards = []
         if show_all or f["vigente"]:
@@ -829,7 +827,6 @@ def main(page: ft.Page):
             controls=[ft.Container(content=top, col=12), *cards],
         )
         return grid
-
 
 
     # --------- Detalhes ---------
