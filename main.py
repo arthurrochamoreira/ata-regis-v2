@@ -41,6 +41,13 @@ CHART_RED   = "#EF4444"   # red-500
 CHART_GRAY_LIGHT = "#E5E7EB"  # gray-200
 CHART_GRAY_DARK  = "#334155"  # slate-700
 
+# ==== TOKENS DE BORDA (Design System) ====
+BORDER_COLOR_LIGHT = ft.Colors.GREY_600
+BORDER_COLOR_DARK  = ft.Colors.GREY_600
+BORDER_WIDTH       = 1
+BORDER_RADIUS_PILL = 999
+
+
 # ==============================
 # MOCKS
 # ==============================
@@ -103,34 +110,6 @@ def format_sei(val: str) -> str:
     parts.append(digits[15:17])
     return "".join(parts).strip(".-/")
 
-# ==============================
-# FACTORY DE BOTÕES PÍLULA
-# ==============================
-def pill_button(
-    text: str,
-    icon: str | None = None,
-    variant: str = "filled",         # "filled" | "outlined" | "text" | "elevated"
-    size: str = DEFAULT_PILL_SIZE,   # "sm" | "md" | "lg"
-    on_click=None,
-    expand: bool = False,
-    disabled: bool = False,
-    tooltip: str | None = None,
-):
-    cfg = PILL.get(size, PILL["md"])
-    style = ft.ButtonStyle(
-        padding=ft.padding.symmetric(vertical=0, horizontal=cfg["px"]),  # padding só horizontal
-        shape=ft.RoundedRectangleBorder(radius=999),                      # pílula
-    )
-    common = dict(text=text, icon=icon, style=style, height=cfg["h"], on_click=on_click, expand=expand, disabled=disabled, tooltip=tooltip)
-
-    if variant == "outlined":
-        return ft.OutlinedButton(**common)
-    if variant == "text":
-        return ft.TextButton(**common)
-    if variant == "elevated":
-        return ft.ElevatedButton(**common)
-    # default
-    return ft.FilledButton(**common)
 
 # ==============================
 # APP
@@ -157,6 +136,51 @@ def main(page: ft.Page):
     # Conteúdo principal
     content_col = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
     content = ft.Container(expand=True, padding=20, content=content_col)
+
+        # ---- Tokens de borda (tema-aware) ----
+    def border_token():
+        return BORDER_COLOR_DARK if is_dark() else BORDER_COLOR_LIGHT
+
+    # ---- Factory simples para TextField com borda padrão ----
+    def tf(**kwargs):
+        # Aplica a borda padrão; demais props vêm por kwargs
+        return ft.TextField(
+            border_color=border_token(),
+            border_width=BORDER_WIDTH,
+            **kwargs
+        )
+
+
+    # ---------- Factory de botões PÍLULA (tema-aware) ----------
+    def pill_button(
+        text: str,
+        icon: str | None = None,
+        variant: str = "filled",         # "filled" | "outlined" | "text" | "elevated"
+        size: str = DEFAULT_PILL_SIZE,   # "sm" | "md" | "lg"
+        on_click=None,
+        expand: bool = False,
+        disabled: bool = False,
+        tooltip: str | None = None,
+    ):
+        cfg = PILL.get(size, PILL["md"])
+        style = ft.ButtonStyle(
+            padding=ft.padding.symmetric(vertical=0, horizontal=cfg["px"]),  # padding só horizontal
+            shape=ft.RoundedRectangleBorder(radius=999),                      # pílula
+            side=ft.BorderSide(BORDER_WIDTH, border_token()),
+        )
+        common = dict(
+            text=text, icon=icon, style=style, height=cfg["h"],
+            on_click=on_click, expand=expand, disabled=disabled, tooltip=tooltip
+        )
+
+        if variant == "outlined":
+            return ft.OutlinedButton(**common)
+        if variant == "text":
+            return ft.TextButton(**common)
+        if variant == "elevated":
+            return ft.ElevatedButton(**common)
+        return ft.FilledButton(**common)
+
 
     # ---------------- helpers gerais ----------------
     def is_dark(): return state["dark"]
@@ -541,15 +565,16 @@ def main(page: ft.Page):
     def AtasPage():
         # Barra de busca (altura igual à pílula "md")
         input_padding = ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"])
-        search = ft.TextField(
+        search = tf(  # usa factory com borda padrão
             hint_text="Buscar atas...",
             prefix_icon=ft.Icons.SEARCH,
-            border_radius=999,
+            border_radius=BORDER_RADIUS_PILL,
             content_padding=input_padding,
             bgcolor=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
             height=PILL["md"]["h"],
             expand=True,
         )
+
 
         actions = ft.Row(
             controls=[
@@ -684,11 +709,11 @@ def main(page: ft.Page):
 
     # --------- Edição ---------
     def show_ata_edit(ata: dict):
-        numero = ft.TextField(label="Número da Ata", value=ata.get("numero",""))
-        documento_sei = ft.TextField(label="Documento SEI", value=ata.get("documentoSei",""))
-        data_vigencia = ft.TextField(label="Data de Vigência", value=ata.get("vigencia",""))
-        objeto = ft.TextField(label="Objeto", value=ata.get("objeto",""))
-        fornecedor = ft.TextField(label="Fornecedor", value=ata.get("fornecedor",""))
+        numero = tf(label="Número da Ata", value=ata.get("numero",""))
+        documento_sei = tf(label="Documento SEI", value=ata.get("documentoSei",""))
+        data_vigencia = tf(label="Data de Vigência", value=ata.get("vigencia",""))
+        objeto = tf(label="Objeto", value=ata.get("objeto",""))
+        fornecedor = tf(label="Fornecedor", value=ata.get("fornecedor",""))
 
         def on_num_change(e):
             e.control.value = format_ata_number(e.control.value)
@@ -700,22 +725,23 @@ def main(page: ft.Page):
             page.update()
         documento_sei.on_change = on_sei_change
 
-        tels = [ft.TextField(label=f"Telefone {i+1}", value=v, prefix_icon=ft.Icons.PHONE) for i, v in enumerate(ata["contatos"].get("telefone") or [])]
-        emails = [ft.TextField(label=f"E-mail {i+1}", value=v, prefix_icon=ft.Icons.MAIL) for i, v in enumerate(ata["contatos"].get("email") or [])]
+        tels = [tf(label=f"Telefone {i+1}", value=v, prefix_icon=ft.Icons.PHONE) for i, v in enumerate(ata["contatos"].get("telefone") or [])]
+        emails = [tf(label=f"E-mail {i+1}", value=v, prefix_icon=ft.Icons.MAIL) for i, v in enumerate(ata["contatos"].get("email") or [])]
 
         def add_tel(e):
-            tels.append(ft.TextField(label=f"Telefone {len(tels)+1}", value="", prefix_icon=ft.Icons.PHONE))
+            tels.append(tf(label=f"Telefone {len(tels)+1}", value="", prefix_icon=ft.Icons.PHONE))
             refresh()
+
         def add_email(e):
-            emails.append(ft.TextField(label=f"E-mail {len(emails)+1}", value="", prefix_icon=ft.Icons.MAIL))
+            emails.append(tf(label=f"E-mail {len(emails)+1}", value="", prefix_icon=ft.Icons.MAIL))
             refresh()
 
         itens = ata.get("itens")[:] if ata.get("itens") else [{"descricao":"","quantidade":"","valorUnitario":""}]
         itens_fields = []
         def build_item_row(idx, item):
-            desc = ft.TextField(label="Descrição", value=item.get("descricao",""), expand=True)
-            qtd  = ft.TextField(label="Qtd.", value=str(item.get("quantidade","")), width=80)
-            vu   = ft.TextField(label="Valor Unit.", value=item.get("valorUnitario",""), width=120)
+            desc = tf(label="Descrição", value=item.get("descricao",""), expand=True)
+            qtd  = tf(label="Qtd.", value=str(item.get("quantidade","")), width=80)
+            vu   = tf(label="Valor Unit.", value=item.get("valorUnitario",""), width=120)
             del_btn = ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, i=idx: confirm_delete("item", i))
             return ft.Row([desc, qtd, vu, del_btn], spacing=8)
 
