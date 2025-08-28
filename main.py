@@ -588,6 +588,15 @@ def main(page: ft.Page):
             return "amber"
         return "red"
 
+    def delete_ata(ata: dict):
+        for key in ["vigentes", "vencidas", "aVencer"]:
+            lista = ATAS.get(key, [])
+            if ata in lista:
+                lista.remove(ata)
+                break
+        show_snack("Ata excluída com sucesso!")
+        set_content(AtasPage())
+
     def AtasSectionCard(title: str, icon_name: str, data: list[dict], variant: str | None = None):
         def vsep(h=28):
             return ft.Container(width=1, height=h, bgcolor=divider_color())
@@ -686,7 +695,12 @@ def main(page: ft.Page):
                                     controls=[
                                         ft.IconButton(icon="visibility", tooltip="Ver", on_click=lambda e, a=ata: show_ata_details(a)),
                                         ft.IconButton(icon="edit", tooltip="Editar", on_click=lambda e, a=ata: show_ata_edit(a)),
-                                        ft.IconButton(icon="delete", tooltip="Excluir", icon_color=ft.Colors.RED_400),
+                                        ft.IconButton(
+                                            icon="delete",
+                                            tooltip="Excluir",
+                                            icon_color=ft.Colors.RED_400,
+                                            on_click=lambda e, a=ata: delete_ata(a),
+                                        ),
                                     ],
                                 ),
                             ),
