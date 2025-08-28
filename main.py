@@ -3,6 +3,7 @@ import flet as ft
 import re
 from datetime import date, datetime
 from typing import Optional, List
+import database as db
 
 # ==============================
 # TOKENS / CONSTANTES
@@ -81,39 +82,6 @@ BORDER_COLOR_DARK = ft.Colors.GREY_700
 BORDER_WIDTH = 1
 BORDER_RADIUS_PILL = 999
 
-# ==============================
-# MOCKS
-# ==============================
-DASHBOARD = {
-    "total": 3,
-    "valorTotal": "R$ 69.010",
-    "vigentes": 1,
-    "aVencer": 1,
-}
-
-ATAS = {
-    "vigentes": [
-        {
-            "numero": "8555/5555",
-            "vigencia": "23/12/2026",
-            "objeto": "Material de escritório",
-            "fornecedor": "JIIJ Comércio",
-            "situacao": "Vigente",
-            "valorTotal": "R$ 10,00",
-            "documentoSei": "56444.444444/4445-55",
-            "itens": [{"descricao": "Caneta esferográfica", "quantidade": 1, "valorUnitario": "R$ 10,00", "subtotal": "R$ 10,00"}],
-            "contatos": {"telefone": ["(55) 55555-5555"], "email": ["contato@jiij.com"]},
-        },
-    ],
-    "vencidas": [
-        {"numero": "4444/4444", "vigencia": "04/01/2025", "objeto": "Serviços de Limpeza", "fornecedor": "Limpa Tudo Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-        {"numero": "0102/0222", "vigencia": "07/01/2024", "objeto": "Sabão", "fornecedor": "Indústrias Químicas ABC", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-        {"numero": "0014/2024", "vigencia": "31/12/2023", "objeto": "Equipamentos de TI", "fornecedor": "TechCorp Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-    ],
-    "aVencer": [
-        {"numero": "0000/1222", "vigencia": "07/11/2025", "objeto": "Scanners", "fornecedor": "EPSON", "situacao": "A Vencer", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-    ],
-}
 
 # ==============================
 # UTILITÁRIOS: MÁSCARAS E VALIDAÇÕES
@@ -211,6 +179,7 @@ class Validators:
 # APP
 # ==============================
 def main(page: ft.Page):
+    db.init_db()
     page.title = "Painel - Dashboard + Atas (Flet)"
     page.padding = 0
     page.theme_mode = ft.ThemeMode.LIGHT
@@ -533,11 +502,13 @@ def main(page: ft.Page):
         )
 
     def DashboardView():
+        dash = db.get_dashboard()
+        total = dash["total"] or 1
         stats = [
-            StatCard("Total de Atas", str(DASHBOARD["total"]), "cadastradas", "article"),
-            StatCard("Valor Total", DASHBOARD["valorTotal"], "em atas", "payments"),
-            StatCard("Vigentes", str(DASHBOARD["vigentes"]), f'{round(DASHBOARD["vigentes"]/DASHBOARD["total"]*100)}% do total', "check_circle"),
-            StatCard("A Vencer", str(DASHBOARD["aVencer"]), f'{round(DASHBOARD["aVencer"]/DASHBOARD["total"]*100)}% do total', "schedule"),
+            StatCard("Total de Atas", str(dash["total"]), "cadastradas", "article"),
+            StatCard("Valor Total", dash["valorTotal"], "em atas", "payments"),
+            StatCard("Vigentes", str(dash["vigentes"]), f'{round(dash["vigentes"]/total*100)}% do total', "check_circle"),
+            StatCard("A Vencer", str(dash["aVencer"]), f'{round(dash["aVencer"]/total*100)}% do total', "schedule"),
         ]
         grid = ft.ResponsiveRow(
             controls=[*stats, Donut(), Bars(), WarningCard()],
@@ -721,6 +692,7 @@ def main(page: ft.Page):
         return f"Filtrar ({n})" if n else "Filtrar"
 
     def AtasPage():
+        ATAS = db.fetch_atas_grouped()
         # Barra de busca (altura igual à pílula "md")
         input_padding = ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"])
         search = tf(
@@ -1130,6 +1102,61 @@ def main(page: ft.Page):
             page.update()
 
             if is_valid:
+                itens = []
+                total = 0.0
+                for row in itens_fields_controls:
+                    desc_field, qtd_field, vu_field = row.controls[0], row.controls[1], row.controls[2]
+                    try:
+                        qtd = int(qtd_field.value)
+                    except Exception:
+                        qtd = 0
+                    try:
+                        vu = float(vu_field.value.replace('.', '').replace(',', '.'))
+                    except Exception:
+                        vu = 0.0
+                    subtotal = qtd * vu
+                    itens.append({
+                        "descricao": desc_field.value,
+                        "quantidade": qtd,
+                        "valorUnitario": vu,
+                        "subtotal": subtotal,
+                    })
+                    total += subtotal
+
+                contatos = {
+                    "telefone": [tel.value for tel in tels_controls],
+                    "email": [email.value for email in emails_controls],
+                }
+
+                try:
+                    vig = datetime.strptime(data_vigencia.value, "%d/%m/%Y").date()
+                except Exception:
+                    vig = date.today()
+                today = date.today()
+                if vig < today:
+                    situacao = "Vencida"
+                elif (vig - today).days <= 30:
+                    situacao = "A Vencer"
+                else:
+                    situacao = "Vigente"
+
+                ata_data = {
+                    "numero": numero.value,
+                    "vigencia": data_vigencia.value,
+                    "objeto": objeto.value,
+                    "fornecedor": fornecedor.value,
+                    "situacao": situacao,
+                    "valorTotal": total,
+                    "documentoSei": documento_sei.value,
+                    "itens": itens,
+                    "contatos": contatos,
+                }
+
+                if is_new:
+                    db.insert_ata(ata_data)
+                else:
+                    db.update_ata(ata.get("id"), ata_data)
+
                 show_snack("Ata salva com sucesso!")
                 set_content(AtasPage())
 
