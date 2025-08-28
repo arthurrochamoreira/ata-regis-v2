@@ -1,6 +1,3 @@
-
-# 2) python main.py
-
 import math
 import flet as ft
 
@@ -17,10 +14,14 @@ R_ITEM = 12     # rounded-lg
 BAR_W = 6       # espessura da barrinha do item ativo
 ANIM = ft.Animation(300, "easeInOut")
 
+# DRY Principle: Define filter keys once.
+FILTER_KEYS = ('vigente', 'vencida', 'a_vencer')
+
+
 # Alturas/paddings padronizados para PÍLULA
 PILL = {
     "sm": {"h": 36, "px": 12, "font": 12},
-    "md": {"h": 44, "px": 16, "font": 14},   # mesma altura do input
+    "md": {"h": 44, "px": 16, "font": 14},  # mesma altura do input
     "lg": {"h": 52, "px": 20, "font": 16},
 }
 DEFAULT_PILL_SIZE = "md"
@@ -41,9 +42,9 @@ TXT_ACTIVE_LIGHT = "#7C3AED"
 TXT_ACTIVE_DARK  = "#E9D5FF"
 
 # Paleta do dashboard
-CHART_GREEN = "#10B981"   # GREEN-500
-CHART_AMBER = "#FF6F00"   # amber-500
-CHART_RED   = "#EF4444"   # red-500
+CHART_GREEN = "#10B981"  # GREEN-500
+CHART_AMBER = "#FF6F00"  # amber-500
+CHART_RED   = "#EF4444"  # red-500
 CHART_GRAY_LIGHT = "#E5E7EB"  # gray-200
 CHART_GRAY_DARK  = "#334155"  # slate-700
 
@@ -151,7 +152,7 @@ def main(page: ft.Page):
         "dark": False,
         "active": "dashboard",
         # === FILTROS === mantidos no estado da página
-        "filters": {"vigente": False, "vencida": False, "a_vencer": False},
+        "filters": {key: False for key in FILTER_KEYS},
     }
 
     # --- REFs menu ---
@@ -185,8 +186,8 @@ def main(page: ft.Page):
     def pill_button(
         text: str,
         icon: str | None = None,
-        variant: str = "filled",         # "filled" | "outlined" | "text" | "elevated"
-        size: str = DEFAULT_PILL_SIZE,   # "sm" | "md" | "lg"
+        variant: str = "filled",        # "filled" | "outlined" | "text" | "elevated"
+        size: str = DEFAULT_PILL_SIZE,  # "sm" | "md" | "lg"
         on_click=None,
         expand: bool = False,
         disabled: bool = False,
@@ -635,8 +636,7 @@ def main(page: ft.Page):
 
     # === FILTROS: helpers de label/contagem ===
     def _filters_count() -> int:
-        f = state["filters"]
-        return int(bool(f["vigente"])) + int(bool(f["vencida"])) + int(bool(f["a_vencer"]))
+        return sum(state["filters"].values())
 
     def _filter_label() -> str:
         n = _filters_count()
@@ -661,8 +661,7 @@ def main(page: ft.Page):
 
         # rótulo dinâmico
         def _filters_count() -> int:
-            f = state["filters"]
-            return int(bool(f["vigente"])) + int(bool(f["vencida"])) + int(bool(f["a_vencer"]))
+            return sum(state["filters"].values())
 
         def _filter_label() -> str:
             n = _filters_count()
@@ -694,7 +693,7 @@ def main(page: ft.Page):
         cb_a_vencer.on_change = lambda e: _toggle_specific("a_vencer", e.control.value)
 
         def _on_filter_clear(_=None):
-            state["filters"] = {"vigente": False, "vencida": False, "a_vencer": False}
+            state["filters"] = {key: False for key in FILTER_KEYS}
             _sync_checkboxes()
             _update_label()
 
@@ -812,15 +811,21 @@ def main(page: ft.Page):
         )
 
         # === FILTROS: decide quais cards mostrar ===
-        f = state.get("filters", {"vigente": False, "vencida": False, "a_vencer": False})
-        show_all = not any(f.values())
+        filter_state = state.get("filters", {key: False for key in FILTER_KEYS})
+        show_all = not any(filter_state.values())
         cards = []
-        if show_all or f["vigente"]:
-            cards.append(AtasSectionCard("Atas Vigentes", "check_circle", ATAS["vigentes"], variant="green"))
-        if show_all or f["vencida"]:
-            cards.append(AtasSectionCard("Atas Vencidas", "cancel", ATAS["vencidas"], variant="red"))
-        if show_all or f["a_vencer"]:
-            cards.append(AtasSectionCard("Atas a Vencer", "schedule", ATAS["aVencer"], variant="amber"))
+
+        filter_map = {
+            'vigente': {'title': 'Atas Vigentes', 'icon': 'check_circle', 'data': ATAS['vigentes'], 'variant': 'green'},
+            'vencida': {'title': 'Atas Vencidas', 'icon': 'cancel', 'data': ATAS['vencidas'], 'variant': 'red'},
+            'a_vencer': {'title': 'Atas a Vencer', 'icon': 'schedule', 'data': ATAS['aVencer'], 'variant': 'amber'},
+        }
+
+        for key in FILTER_KEYS:
+            if show_all or filter_state.get(key):
+                info = filter_map[key]
+                cards.append(AtasSectionCard(info['title'], info['icon'], info['data'], variant=info['variant']))
+
 
         grid = ft.ResponsiveRow(
             columns=12, spacing=16, run_spacing=16,
@@ -1020,7 +1025,7 @@ def main(page: ft.Page):
         header = ft.Row(
             controls=[
                 ft.Column([ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color()),
-                           ft.Text("Editar Ata", size=13, color=text_muted())], spacing=2, expand=True),
+                          ft.Text("Editar Ata", size=13, color=text_muted())], spacing=2, expand=True),
                 ft.Row([
                     pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: set_content(AtasPage())),
                     pill_button("Salvar", icon="save", variant="filled", on_click=lambda e: (show_snack("Ata salva com sucesso!"), set_content(AtasPage()))),
@@ -1067,7 +1072,7 @@ def main(page: ft.Page):
             ft.Container(
                 bgcolor=surface_bg(), border_radius=16, padding=16,
                 content=ft.Column(controls=[ft.Text(title, size=18, weight=ft.FontWeight.W_600, color=text_color()),
-                                            ft.Text(subtitle, color=text_muted())], spacing=6))
+                                             ft.Text(subtitle, color=text_muted())], spacing=6))
         ])
 
     # ==============================
