@@ -18,8 +18,13 @@ R_ITEM = 12     # rounded-lg
 BAR_W = 6       # espessura da barrinha do item ativo
 ANIM = ft.Animation(300, "easeInOut")
 
-# Altura padrão para inputs e botões (padronização visual)
-H_INPUT = 44
+# Alturas/paddings padronizados para PÍLULA
+PILL = {
+    "sm": {"h": 36, "px": 12, "font": 12},
+    "md": {"h": 44, "px": 16, "font": 14},   # mesma altura do input
+    "lg": {"h": 52, "px": 20, "font": 16},
+}
+DEFAULT_PILL_SIZE = "md"
 
 # Cores base (menu)
 COLOR_ACTIVE_BG_LIGHT = "#EDE9FE"     # purple-100
@@ -99,6 +104,35 @@ def format_sei(val: str) -> str:
     return "".join(parts).strip(".-/")
 
 # ==============================
+# FACTORY DE BOTÕES PÍLULA
+# ==============================
+def pill_button(
+    text: str,
+    icon: str | None = None,
+    variant: str = "filled",         # "filled" | "outlined" | "text" | "elevated"
+    size: str = DEFAULT_PILL_SIZE,   # "sm" | "md" | "lg"
+    on_click=None,
+    expand: bool = False,
+    disabled: bool = False,
+    tooltip: str | None = None,
+):
+    cfg = PILL.get(size, PILL["md"])
+    style = ft.ButtonStyle(
+        padding=ft.padding.symmetric(vertical=0, horizontal=cfg["px"]),  # padding só horizontal
+        shape=ft.RoundedRectangleBorder(radius=999),                      # pílula
+    )
+    common = dict(text=text, icon=icon, style=style, height=cfg["h"], on_click=on_click, expand=expand, disabled=disabled, tooltip=tooltip)
+
+    if variant == "outlined":
+        return ft.OutlinedButton(**common)
+    if variant == "text":
+        return ft.TextButton(**common)
+    if variant == "elevated":
+        return ft.ElevatedButton(**common)
+    # default
+    return ft.FilledButton(**common)
+
+# ==============================
 # APP
 # ==============================
 def main(page: ft.Page):
@@ -120,7 +154,7 @@ def main(page: ft.Page):
     theme_text = ft.Text()
     items: dict[str, dict] = {}
 
-    # Conteúdo principal (vamos trocar essa coluna conforme a aba)
+    # Conteúdo principal
     content_col = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
     content = ft.Container(expand=True, padding=20, content=content_col)
 
@@ -174,7 +208,6 @@ def main(page: ft.Page):
         state["active"] = key
         for k in items:
             update_item_visual(k)
-        # troca a view
         if key == "dashboard":
             set_content(DashboardView())
         elif key == "atas":
@@ -386,7 +419,6 @@ def main(page: ft.Page):
     # ATAS: Tabela, Detalhes e Edição
     # ==============================
     def badge(text: str, variant: str):
-        # variant: "green" | "amber" | "red"
         variant = (variant or "").lower()
         if variant == "green":
             bg, fg = (ft.Colors.GREEN_100, ft.Colors.GREEN_800)
@@ -412,12 +444,10 @@ def main(page: ft.Page):
             return "amber"
         return "red"
 
-    # ---------- List-Card (com colunas + separadores + títulos centralizados) ----------
     def AtasSectionCard(title: str, icon_name: str, data: list[dict]):
         def vsep(h=28):
             return ft.Container(width=1, height=h, bgcolor=divider_color())
 
-        # Cabeçalho
         header = ft.Row(
             alignment=ft.MainAxisAlignment.START,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -433,7 +463,6 @@ def main(page: ft.Page):
             ],
         )
 
-        # Cabeçalho das colunas (centralizado)
         cols_head = ft.Container(
             padding=ft.padding.symmetric(vertical=10, horizontal=12),
             bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.BLACK),
@@ -452,15 +481,11 @@ def main(page: ft.Page):
                     vsep(),
                     ft.Container(ft.Text("SITUAÇÃO", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center),
                     vsep(),
-                    ft.Container(
-                        ft.Text("AÇÕES", size=11, color=text_muted()),
-                        width=140, alignment=ft.alignment.center
-                    ),
+                    ft.Container(ft.Text("AÇÕES", size=11, color=text_muted()), width=140, alignment=ft.alignment.center),
                 ],
             )
         )
 
-        # Linhas (dados)
         rows_ui = []
         for ata in data:
             rows_ui.append(
@@ -478,10 +503,7 @@ def main(page: ft.Page):
                             vsep(24),
                             ft.Container(ft.Text(ata["fornecedor"], color=text_muted()), expand=3, alignment=ft.alignment.center),
                             vsep(24),
-                            ft.Container(
-                                badge(ata["situacao"], situacao_to_variant(ata["situacao"])),
-                                expand=2, alignment=ft.alignment.center,
-                            ),
+                            ft.Container(badge(ata["situacao"], situacao_to_variant(ata["situacao"])), expand=2, alignment=ft.alignment.center),
                             vsep(24),
                             ft.Container(
                                 alignment=ft.alignment.center,
@@ -517,34 +539,26 @@ def main(page: ft.Page):
         )
 
     def AtasPage():
-        # ===== CORREÇÃO AQUI =====
-        # Usamos altura fixa para campo e botões e padding somente horizontal
-        shared_padding = ft.padding.symmetric(vertical=0, horizontal=16)
-        shared_radius = 999
-
+        # Barra de busca (altura igual à pílula "md")
+        input_padding = ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"])
         search = ft.TextField(
             hint_text="Buscar atas...",
             prefix_icon=ft.Icons.SEARCH,
-            border_radius=shared_radius,
-            content_padding=shared_padding,   # vertical = 0
+            border_radius=999,
+            content_padding=input_padding,
             bgcolor=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
-            height=H_INPUT,                   # altura fixa padronizada
+            height=PILL["md"]["h"],
             expand=True,
-        )
-
-        button_style = ft.ButtonStyle(
-            padding=shared_padding,           # vertical = 0
-            shape=ft.RoundedRectangleBorder(radius=shared_radius),
         )
 
         actions = ft.Row(
             controls=[
-                ft.OutlinedButton("Filtrar", icon="filter_list", style=button_style, height=H_INPUT),
-                ft.OutlinedButton("Ordenar", icon="sort", style=button_style, height=H_INPUT),
-                ft.FilledButton("Nova Ata", icon="add", style=button_style, height=H_INPUT),
+                pill_button("Filtrar", icon="filter_list", variant="outlined"),
+                pill_button("Ordenar", icon="sort", variant="outlined"),
+                pill_button("Nova Ata", icon="add", variant="filled"),
             ],
             spacing=8,
-            vertical_alignment=ft.CrossAxisAlignment.CENTER,  # centraliza verticalmente
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
         top = ft.Container(
@@ -564,11 +578,8 @@ def main(page: ft.Page):
             ),
         )
 
-        # Cards empilhados (como no print)
         grid = ft.ResponsiveRow(
-            columns=12,
-            spacing=16,
-            run_spacing=16,
+            columns=12, spacing=16, run_spacing=16,
             controls=[
                 ft.Container(content=top, col=12),
                 AtasSectionCard("Atas Vigentes", "check_circle", ATAS["vigentes"]),
@@ -576,25 +587,39 @@ def main(page: ft.Page):
                 AtasSectionCard("Atas a Vencer", "schedule", ATAS["aVencer"]),
             ],
         )
-
         return grid
 
     # --------- Detalhes ---------
     def show_ata_details(ata: dict):
         title = ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color())
         subtitle = ft.Text(f"Nº {ata['numero']}", size=13, color=text_muted())
+
         header = ft.Row(
             controls=[
                 ft.Column(controls=[title, subtitle], spacing=2, expand=True),
-                ft.Row(controls=[
-                    ft.OutlinedButton("Voltar", icon="arrow_back", on_click=lambda e: set_content(AtasPage())),
-                    ft.FilledButton("Editar", icon="edit", on_click=lambda e, a=ata: show_ata_edit(a)),
-                ], spacing=8)
+                ft.Row(
+                    controls=[
+                        # Voltar para a lista de atas
+                        pill_button(
+                            "Voltar",
+                            icon="arrow_back",
+                            variant="outlined",
+                            on_click=lambda e: set_content(AtasPage()),
+                        ),
+                        # Ir para a edição desta mesma ata
+                        pill_button(
+                            "Editar",
+                            icon="edit",
+                            variant="filled",
+                            on_click=lambda e, ata_=ata: show_ata_edit(ata_),
+                        ),
+                    ],
+                    spacing=8,
+                ),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         )
 
-        # Cards: Dados gerais / Fornecedor
         dados = ft.Container(
             bgcolor=surface_bg(), border_radius=16, padding=16,
             content=ft.Column(
@@ -626,7 +651,6 @@ def main(page: ft.Page):
             ft.Container(content=forn,  col={"xs":12, "lg":6}),
         ])
 
-        # Tabela de itens
         it_cols = [
             ft.DataColumn(ft.Text("Descrição", color=text_muted())),
             ft.DataColumn(ft.Text("Qtd.", color=text_muted())),
@@ -660,14 +684,12 @@ def main(page: ft.Page):
 
     # --------- Edição ---------
     def show_ata_edit(ata: dict):
-        # Estado local (referências)
         numero = ft.TextField(label="Número da Ata", value=ata.get("numero",""))
         documento_sei = ft.TextField(label="Documento SEI", value=ata.get("documentoSei",""))
         data_vigencia = ft.TextField(label="Data de Vigência", value=ata.get("vigencia",""))
         objeto = ft.TextField(label="Objeto", value=ata.get("objeto",""))
         fornecedor = ft.TextField(label="Fornecedor", value=ata.get("fornecedor",""))
 
-        # máscaras simples
         def on_num_change(e):
             e.control.value = format_ata_number(e.control.value)
             page.update()
@@ -678,7 +700,6 @@ def main(page: ft.Page):
             page.update()
         documento_sei.on_change = on_sei_change
 
-        # contatos
         tels = [ft.TextField(label=f"Telefone {i+1}", value=v, prefix_icon=ft.Icons.PHONE) for i, v in enumerate(ata["contatos"].get("telefone") or [])]
         emails = [ft.TextField(label=f"E-mail {i+1}", value=v, prefix_icon=ft.Icons.MAIL) for i, v in enumerate(ata["contatos"].get("email") or [])]
 
@@ -689,7 +710,6 @@ def main(page: ft.Page):
             emails.append(ft.TextField(label=f"E-mail {len(emails)+1}", value="", prefix_icon=ft.Icons.MAIL))
             refresh()
 
-        # itens
         itens = ata.get("itens")[:] if ata.get("itens") else [{"descricao":"","quantidade":"","valorUnitario":""}]
         itens_fields = []
         def build_item_row(idx, item):
@@ -707,15 +727,14 @@ def main(page: ft.Page):
             itens_fields.append(build_item_row(len(itens_fields), itens[-1]))
             refresh()
 
-        # modal confirmação
         dlg = ft.AlertDialog(modal=True, title=ft.Text("Confirmar exclusão"), content=ft.Text("Tem certeza de que deseja excluir este item?"), actions=[])
         delete_ctx = {"type": None, "index": None}
 
         def confirm_delete(kind, idx):
             delete_ctx["type"]=kind; delete_ctx["index"]=idx
             dlg.actions = [
-                ft.TextButton("Cancelar", on_click=lambda e: page.close(dlg)),
-                ft.FilledButton("Excluir", icon="delete", on_click=do_delete)
+                pill_button("Cancelar", variant="text", on_click=lambda e: page.close(dlg)),
+                pill_button("Excluir",  icon="delete", variant="filled", on_click=do_delete),
             ]
             page.open(dlg)
 
@@ -738,33 +757,37 @@ def main(page: ft.Page):
 
         def refresh():
             contacts_col.controls = [
-                ft.Row([ft.Text("Contatos", size=16, weight=ft.FontWeight.W_600, color=text_color()),
-                        ft.TextButton("Adicionar telefone", icon="add", on_click=add_tel),
-                        ft.TextButton("Adicionar e-mail", icon="add", on_click=add_email)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                ft.Row(
+                    [ft.Text("Contatos", size=16, weight=ft.FontWeight.W_600, color=text_color()),
+                     pill_button("Adicionar telefone", icon="add", variant="text", size="sm", on_click=add_tel),
+                     pill_button("Adicionar e-mail",  icon="add", variant="text", size="sm", on_click=add_email)],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                ),
                 ft.Column([ft.Row([t, ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, i=i: confirm_delete("telefone", i))], spacing=8) for i, t in enumerate(tels)], spacing=8),
                 ft.Column([ft.Row([m, ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, i=i: confirm_delete("email", i))], spacing=8) for i, m in enumerate(emails)], spacing=8),
             ]
             itens_col.controls = [
-                ft.Row([ft.Text("Itens", size=16, weight=ft.FontWeight.W_600, color=text_color()),
-                        ft.TextButton("Adicionar", icon="add", on_click=add_item)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                ft.Row(
+                    [ft.Text("Itens", size=16, weight=ft.FontWeight.W_600, color=text_color()),
+                     pill_button("Adicionar", icon="add", variant="outlined", size="sm", on_click=add_item)],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                ),
                 ft.Column(itens_fields, spacing=8)
             ]
             page.update()
 
-        # layout cabeçalho
         header = ft.Row(
             controls=[
                 ft.Column([ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color()),
                            ft.Text("Editar Ata", size=13, color=text_muted())], spacing=2, expand=True),
                 ft.Row([
-                    ft.OutlinedButton("Voltar", icon="arrow_back", on_click=lambda e: set_content(AtasPage())),
-                    ft.FilledButton("Salvar", icon="save", on_click=lambda e: (show_snack("Ata salva com sucesso!"), set_content(AtasPage()))),
+                    pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: set_content(AtasPage())),
+                    pill_button("Salvar", icon="save", variant="filled", on_click=lambda e: (show_snack("Ata salva com sucesso!"), set_content(AtasPage()))),
                 ], spacing=8),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         )
 
-        # cards esquerda
         dados_gerais = ft.Container(
             bgcolor=surface_bg(), border_radius=16, padding=16,
             content=ft.Column(
@@ -777,10 +800,7 @@ def main(page: ft.Page):
         )
 
         contacts_col = ft.Column(spacing=10)
-        contatos_card = ft.Container(
-            bgcolor=surface_bg(), border_radius=16, padding=16,
-            content=contacts_col
-        )
+        contatos_card = ft.Container(bgcolor=surface_bg(), border_radius=16, padding=16, content=contacts_col)
 
         grid_top = ft.ResponsiveRow(
             columns=12, spacing=16, run_spacing=16,
@@ -789,10 +809,7 @@ def main(page: ft.Page):
         )
 
         itens_col = ft.Column(spacing=10)
-        itens_card = ft.Container(
-            bgcolor=surface_bg(), border_radius=16, padding=16,
-            content=itens_col
-        )
+        itens_card = ft.Container(bgcolor=surface_bg(), border_radius=16, padding=16, content=itens_col)
 
         view = ft.Column(controls=[header, grid_top, itens_card], spacing=16)
         set_content(view)
@@ -871,7 +888,6 @@ def main(page: ft.Page):
         shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.15, ft.Colors.BLACK)),
     )
 
-    # Estado inicial & conteúdo inicial
     def init_state():
         root.width = W_COLLAPSED
         title_box.width = 0
@@ -884,7 +900,6 @@ def main(page: ft.Page):
     set_content(DashboardView())
     update_theme_colors()
 
-    # Layout
     page.add(ft.Row(controls=[root, content], expand=True, vertical_alignment=ft.CrossAxisAlignment.START))
 
 if __name__ == "__main__":
