@@ -4,6 +4,8 @@ import re
 from datetime import date, datetime
 from typing import Optional, List
 
+from database import init_db, fetch_atas, delete_ata_db, format_currency
+
 # ==============================
 # TOKENS / CONSTANTES
 # ==============================
@@ -82,37 +84,15 @@ BORDER_WIDTH = 1
 BORDER_RADIUS_PILL = 999
 
 # ==============================
-# MOCKS
+# BANCO DE DADOS
 # ==============================
+init_db()
+ATAS, _total_valor = fetch_atas()
 DASHBOARD = {
-    "total": 3,
-    "valorTotal": "R$ 69.010",
-    "vigentes": 1,
-    "aVencer": 1,
-}
-
-ATAS = {
-    "vigentes": [
-        {
-            "numero": "8555/5555",
-            "vigencia": "23/12/2026",
-            "objeto": "Material de escritório",
-            "fornecedor": "JIIJ Comércio",
-            "situacao": "Vigente",
-            "valorTotal": "R$ 10,00",
-            "documentoSei": "56444.444444/4445-55",
-            "itens": [{"descricao": "Caneta esferográfica", "quantidade": 1, "valorUnitario": "R$ 10,00", "subtotal": "R$ 10,00"}],
-            "contatos": {"telefone": ["(55) 55555-5555"], "email": ["contato@jiij.com"]},
-        },
-    ],
-    "vencidas": [
-        {"numero": "4444/4444", "vigencia": "04/01/2025", "objeto": "Serviços de Limpeza", "fornecedor": "Limpa Tudo Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-        {"numero": "0102/0222", "vigencia": "07/01/2024", "objeto": "Sabão", "fornecedor": "Indústrias Químicas ABC", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-        {"numero": "0014/2024", "vigencia": "31/12/2023", "objeto": "Equipamentos de TI", "fornecedor": "TechCorp Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-    ],
-    "aVencer": [
-        {"numero": "0000/1222", "vigencia": "07/11/2025", "objeto": "Scanners", "fornecedor": "EPSON", "situacao": "A Vencer", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-    ],
+    "total": sum(len(v) for v in ATAS.values()),
+    "valorTotal": format_currency(_total_valor),
+    "vigentes": len(ATAS["vigentes"]),
+    "aVencer": len(ATAS["aVencer"]),
 }
 
 # ==============================
@@ -589,11 +569,16 @@ def main(page: ft.Page):
         return "red"
 
     def delete_ata(ata: dict):
-        for key in ["vigentes", "vencidas", "aVencer"]:
-            lista = ATAS.get(key, [])
-            if ata in lista:
-                lista.remove(ata)
-                break
+        if "id" in ata:
+            delete_ata_db(ata["id"])
+        global ATAS, DASHBOARD
+        ATAS, total_val = fetch_atas()
+        DASHBOARD = {
+            "total": sum(len(v) for v in ATAS.values()),
+            "valorTotal": format_currency(total_val),
+            "vigentes": len(ATAS["vigentes"]),
+            "aVencer": len(ATAS["aVencer"]),
+        }
         show_snack("Ata excluída com sucesso!")
         set_content(AtasPage())
 
