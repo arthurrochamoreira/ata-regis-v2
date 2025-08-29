@@ -4,6 +4,8 @@ import re
 from datetime import date, datetime
 from typing import Optional, List
 
+import database as db
+
 # ==============================
 # TOKENS / CONSTANTES
 # ==============================
@@ -80,38 +82,39 @@ BORDER_WIDTH = 1
 BORDER_RADIUS_PILL = 999
 
 # ==============================
-# MOCKS
+# INTEGRAÇÃO COM BANCO DE DADOS
 # ==============================
-DASHBOARD = {
-    "total": 3,
-    "valorTotal": "R$ 69.010",
-    "vigentes": 1,
-    "aVencer": 1,
-}
 
-ATAS = {
-    "vigentes": [
-        {
-            "numero": "8555/5555",
-            "vigencia": "23/12/2026",
-            "objeto": "Material de escritório",
-            "fornecedor": "JIIJ Comércio",
-            "situacao": "Vigente",
-            "valorTotal": "R$ 10,00",
-            "documentoSei": "56444.444444/4445-55",
-            "itens": [{"descricao": "Caneta esferográfica", "quantidade": 1, "valorUnitario": "R$ 10,00", "subtotal": "R$ 10,00"}],
-            "contatos": {"telefone": ["(55) 55555-5555"], "email": ["contato@jiij.com"]},
-        },
-    ],
-    "vencidas": [
-        {"numero": "4444/4444", "vigencia": "04/01/2025", "objeto": "Serviços de Limpeza", "fornecedor": "Limpa Tudo Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-        {"numero": "0102/0222", "vigencia": "07/01/2024", "objeto": "Sabão", "fornecedor": "Indústrias Químicas ABC", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-        {"numero": "0014/2024", "vigencia": "31/12/2023", "objeto": "Equipamentos de TI", "fornecedor": "TechCorp Ltda", "situacao": "Vencida", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-    ],
-    "aVencer": [
-        {"numero": "0000/1222", "vigencia": "07/11/2025", "objeto": "Scanners", "fornecedor": "EPSON", "situacao": "A Vencer", "valorTotal": "R$ 0,00", "documentoSei": "", "itens": [], "contatos": {"telefone": [], "email": []}},
-    ],
-}
+
+def _compute_dashboard(atas: dict) -> dict:
+    """Calcula métricas agregadas para o dashboard."""
+    vigentes = len(atas.get("vigentes", []))
+    vencidas = len(atas.get("vencidas", []))
+    a_vencer = len(atas.get("aVencer", []))
+    total = vigentes + vencidas + a_vencer
+    total_cent = sum(
+        db.parse_currency(a["valorTotal"])
+        for lst in atas.values()
+        for a in lst
+    )
+    return {
+        "total": total,
+        "valorTotal": db.format_currency(total_cent),
+        "vigentes": vigentes,
+        "aVencer": a_vencer,
+    }
+
+
+def _refresh_data(filters=None, search=None) -> None:
+    """Atualiza os caches globais de atas e métricas."""
+    global ATAS, DASHBOARD
+    ATAS = db.fetch_atas(filters=filters, search=search)
+    DASHBOARD = _compute_dashboard(ATAS)
+
+
+db.init_db()
+_refresh_data()
+
 
 # ==============================
 # UTILITÁRIOS: MÁSCARAS E VALIDAÇÕES
@@ -454,17 +457,35 @@ def main(page: ft.Page):
         )
 
     def Donut():
+        total = DASHBOARD["total"] or 1
+        vig = DASHBOARD["vigentes"]
+        av = DASHBOARD["aVencer"]
+        ven = total - vig - av
         sections = [
-            ft.PieChartSection(1, title="", color=CHART_GREEN),
-            ft.PieChartSection(1, title="", color=CHART_AMBER),
-            ft.PieChartSection(1, title="", color=CHART_RED),
+            ft.PieChartSection(vig, title="", color=CHART_GREEN),
+            ft.PieChartSection(av, title="", color=CHART_AMBER),
+            ft.PieChartSection(ven, title="", color=CHART_RED),
         ]
-        chart = ft.PieChart(sections=sections, center_space_radius=45, sections_space=2, animate=ft.Animation(300, "easeOut"))
+        chart = ft.PieChart(
+            sections=sections,
+            center_space_radius=45,
+            sections_space=2,
+            animate=ft.Animation(300, "easeOut"),
+        )
         legend = ft.Column(
             controls=[
-                ft.Row([ft.Container(width=8, height=8, bgcolor=CHART_GREEN, border_radius=20), ft.Text("Vigentes: 1 (33,3%)", size=12, color=text_muted())], spacing=8),
-                ft.Row([ft.Container(width=8, height=8, bgcolor=CHART_AMBER, border_radius=20), ft.Text("A Vencer: 1 (33,3%)", size=12, color=text_muted())], spacing=8),
-                ft.Row([ft.Container(width=8, height=8, bgcolor=CHART_RED, border_radius=20), ft.Text("Vencidas: 1 (33,3%)", size=12, color=text_muted())], spacing=8),
+                ft.Row([
+                    ft.Container(width=8, height=8, bgcolor=CHART_GREEN, border_radius=20),
+                    ft.Text(f"Vigentes: {vig} ({vig/total*100:.1f}%)", size=12, color=text_muted()),
+                ], spacing=8),
+                ft.Row([
+                    ft.Container(width=8, height=8, bgcolor=CHART_AMBER, border_radius=20),
+                    ft.Text(f"A Vencer: {av} ({av/total*100:.1f}%)", size=12, color=text_muted()),
+                ], spacing=8),
+                ft.Row([
+                    ft.Container(width=8, height=8, bgcolor=CHART_RED, border_radius=20),
+                    ft.Text(f"Vencidas: {ven} ({ven/total*100:.1f}%)", size=12, color=text_muted()),
+                ], spacing=8),
             ],
             spacing=6,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -473,11 +494,15 @@ def main(page: ft.Page):
             bgcolor=surface_bg(),
             border_radius=16,
             padding=20,
-            shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK)),
+            shadow=ft.BoxShadow(
+                blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK)
+            ),
             content=ft.Column(
-                controls=[ft.Text("Situação das Atas", size=16, weight=ft.FontWeight.W_600, color=text_color()),
-                          ft.Container(content=chart, alignment=ft.alignment.center, padding=10),
-                          ft.Container(content=legend, alignment=ft.alignment.center, padding=10)],
+                controls=[
+                    ft.Text("Situação das Atas", size=16, weight=ft.FontWeight.W_600, color=text_color()),
+                    ft.Container(content=chart, alignment=ft.alignment.center, padding=10),
+                    ft.Container(content=legend, alignment=ft.alignment.center, padding=10),
+                ],
                 spacing=10,
             ),
             col={"xs": 12, "lg": 6},
@@ -508,16 +533,26 @@ def main(page: ft.Page):
         )
 
     def WarningCard():
+        dias_alerta = int(db.get_param("dias_alerta_vencimento", "60") or 60)
         return ft.Container(
             bgcolor=ft.Colors.AMBER_100 if not is_dark() else ft.Colors.AMBER_900,
             border_radius=16,
             padding=20,
-            shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK)),
+            shadow=ft.BoxShadow(
+                blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK)
+            ),
             border=ft.border.only(left=ft.BorderSide(4, ft.Colors.AMBER)),
             content=ft.Column(
                 controls=[
-                    ft.Row([ft.Icon("warning", size=22, color=ft.Colors.AMBER), ft.Text("Atenção", weight=ft.FontWeight.W_600, color=text_color())], spacing=8),
-                    ft.Text("Você possui 1 ata(s) vencendo em 59 dias ou menos.", size=12, color=text_muted()),
+                    ft.Row(
+                        [ft.Icon("warning", size=22, color=ft.Colors.AMBER), ft.Text("Atenção", weight=ft.FontWeight.W_600, color=text_color())],
+                        spacing=8,
+                    ),
+                    ft.Text(
+                        f"Você possui {DASHBOARD['aVencer']} ata(s) vencendo em {dias_alerta} dias ou menos.",
+                        size=12,
+                        color=text_muted(),
+                    ),
                 ],
                 spacing=8,
             ),
@@ -579,11 +614,8 @@ def main(page: ft.Page):
         return "red"
 
     def _perform_delete_ata(ata: dict):
-        for key in ["vigentes", "vencidas", "aVencer"]:
-            lista = ATAS.get(key, [])
-            if ata in lista:
-                lista.remove(ata)
-                break
+        db.delete_ata_db(ata["id"])
+        _refresh_data(state["filters"])
         show_snack("Ata excluída com sucesso!")
         set_content(AtasPage())
         
@@ -722,6 +754,14 @@ def main(page: ft.Page):
             bgcolor=ft.Colors.with_opacity(0.04, ft.Colors.BLACK), height=PILL["md"]["h"], expand=True,
         )
 
+        def _on_search(e):
+            _refresh_data(state["filters"], search.value or None)
+            set_content(AtasPage())
+
+        search.on_submit = _on_search
+
+        _refresh_data(state["filters"], search.value or None)
+
         _cfg = PILL["md"]
         _pad = ft.padding.symmetric(vertical=0, horizontal=_cfg["px"])
 
@@ -755,6 +795,7 @@ def main(page: ft.Page):
             _update_label()
 
         def _on_filter_apply(_=None):
+            _refresh_data(state["filters"], search.value or None)
             set_content(AtasPage())
 
         menu_box = ft.Container(
@@ -997,7 +1038,47 @@ def main(page: ft.Page):
 
             page.update()
             if is_valid:
-                show_snack("Ata salva com sucesso!"); set_content(AtasPage())
+                vigencia_dt = Validators.validar_data_vigencia(data_vigencia.value)
+                forn_id = db.get_or_create_fornecedor(fornecedor.value.strip())
+
+                itens = []
+                for row in itens_fields_controls:
+                    desc_field, qtd_field, vu_field = row.controls[0], row.controls[1], row.controls[2]
+                    itens.append(
+                        {
+                            "descricao": desc_field.value.strip(),
+                            "quantidade": int(qtd_field.value),
+                            "valor_unit_centavos": db.parse_currency(vu_field.value),
+                        }
+                    )
+
+                contatos = []
+                for tel in tels_controls:
+                    if tel.value:
+                        contatos.append({"tipo": "telefone", "valor": tel.value})
+                for em in emails_controls:
+                    if em.value:
+                        contatos.append({"tipo": "email", "valor": em.value})
+
+                dto = {
+                    "numero": numero.value.strip(),
+                    "sei": documento_sei.value.strip(),
+                    "objeto": objeto.value.strip(),
+                    "fornecedor_id": forn_id,
+                    "data_inicio": vigencia_dt.isoformat(),
+                    "data_fim": vigencia_dt.isoformat(),
+                    "itens": itens,
+                    "contatos": contatos,
+                }
+
+                if is_new:
+                    db.create_ata(dto)
+                else:
+                    db.update_ata(ata["id"], dto)
+
+                _refresh_data()
+                show_snack("Ata salva com sucesso!")
+                set_content(AtasPage())
 
         def build_item_row(idx, item_data):
             desc = tf(label="Descrição", value=item_data.get("descricao", ""), expand=True)
