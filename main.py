@@ -4,6 +4,8 @@ import re
 from datetime import date, datetime
 from typing import Optional, List
 
+import sqlite3
+
 import database as db
 
 # ==============================
@@ -159,6 +161,17 @@ class MaskUtils:
             return f"({digits[:2]}) {digits[2:6]}-{digits[6:]}"
         if len(digits) > 2:
             return f"({digits[:2]}) {digits[2:]}"
+        return digits
+
+    @staticmethod
+    def aplicar_mascara_data(text: str) -> str:
+        digits = MaskUtils._get_only_digits(text)
+        if len(digits) > 8:
+            digits = digits[:8]
+        if len(digits) > 4:
+            return f"{digits[:2]}/{digits[2:4]}/{digits[4:]}"
+        if len(digits) > 2:
+            return f"{digits[:2]}/{digits[2:]}"
         return digits
 
 class Validators:
@@ -991,6 +1004,11 @@ def main(page: ft.Page):
             e.control.update()
         documento_sei.on_change = on_sei_change
 
+        def on_date_change(e):
+            e.control.value = MaskUtils.aplicar_mascara_data(e.control.value)
+            e.control.update()
+        data_vigencia.on_change = on_date_change
+
         def on_tel_change(e):
             e.control.value = MaskUtils.aplicar_mascara_telefone(e.control.value)
             e.control.update()
@@ -1071,10 +1089,14 @@ def main(page: ft.Page):
                     "contatos": contatos,
                 }
 
-                if is_new:
-                    db.create_ata(dto)
-                else:
-                    db.update_ata(ata["id"], dto)
+                try:
+                    if is_new:
+                        db.create_ata(dto)
+                    else:
+                        db.update_ata(ata["id"], dto)
+                except sqlite3.IntegrityError:
+                    show_snack("Já existe uma ata com este número SEI.", error=True)
+                    return
 
                 _refresh_data()
                 show_snack("Ata salva com sucesso!")
@@ -1153,8 +1175,9 @@ def main(page: ft.Page):
         set_content(view)
         refresh_ui()
 
-    def show_snack(msg: str):
-        page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=ft.Colors.GREEN_700)
+    def show_snack(msg: str, error: bool = False):
+        color = ft.Colors.RED_700 if error else ft.Colors.GREEN_700
+        page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=color)
         page.snack_bar.open = True
         page.update()
 
