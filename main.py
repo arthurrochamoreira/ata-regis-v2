@@ -41,7 +41,6 @@ COLOR_ACTIVE_BG_DARK = "#2E1065"  # purple-950 aprox
 COLOR_ACTIVE_BAR_LIGHT = "#8B5CF6"  # purple-500
 COLOR_ACTIVE_BAR_DARK = "#A78BFA"  # purple-300
 
-# FIX: Update TXT_ACTIVE_LIGHT to a darker shade for better contrast
 TXT_ACTIVE_LIGHT = "#6D28D9" # purple-700
 TXT_ACTIVE_DARK = "#E9D5FF"
 
@@ -52,7 +51,7 @@ CHART_RED = "#EF4444"  # red-500
 CHART_GRAY_LIGHT = "#E5E7EB"  # gray-200
 CHART_GRAY_DARK = "#334155"  # slate-700
 
-# Dicionário de cores para os cards das atas - AGORA USANDO A MESMA LÓGICA DO BADGE
+# Dicionário de cores para os cards das atas
 ATA_CARD_PALETTE = {
     "green": {
         "bg_light": ft.Colors.GREEN_100,
@@ -61,7 +60,6 @@ ATA_CARD_PALETTE = {
         "icon_color_dark": ft.Colors.GREEN_100,
     },
     "amber": {
-        # FIX: Change AMBER_100 to AMBER_50 for better contrast on light mode
         "bg_light": ft.Colors.AMBER_50,
         "bg_dark": ft.Colors.AMBER_900,
         "icon_color": ft.Colors.AMBER_900,
@@ -220,7 +218,6 @@ def main(page: ft.Page):
         "collapsed": True,
         "dark": False,
         "active": "dashboard",
-        # === FILTROS === mantidos no estado da página
         "filters": {key: False for key in FILTER_KEYS},
     }
 
@@ -255,19 +252,22 @@ def main(page: ft.Page):
     def pill_button(
         text: str,
         icon: str | None = None,
-        variant: str = "filled",  # "filled" | "outlined" | "text" | "elevated"
-        size: str = DEFAULT_PILL_SIZE,  # "sm" | "md" | "lg"
+        variant: str = "filled",
+        size: str = DEFAULT_PILL_SIZE,
         on_click=None,
         expand: bool = False,
         disabled: bool = False,
         tooltip: str | None = None,
+        style: ft.ButtonStyle | None = None,
     ):
         cfg = PILL.get(size, PILL["md"])
-        style = ft.ButtonStyle(
-            padding=ft.padding.symmetric(vertical=0, horizontal=cfg["px"]),
-            shape=ft.RoundedRectangleBorder(radius=999),
-            side=ft.BorderSide(BORDER_WIDTH, border_token()) if variant == "outlined" else None,
-        )
+        if not style:
+            style = ft.ButtonStyle(
+                padding=ft.padding.symmetric(vertical=0, horizontal=cfg["px"]),
+                shape=ft.RoundedRectangleBorder(radius=999),
+                side=ft.BorderSide(BORDER_WIDTH, border_token()) if variant == "outlined" else None,
+            )
+        
         common = dict(
             text=text, icon=icon, style=style, height=cfg["h"],
             on_click=on_click, expand=expand, disabled=disabled, tooltip=tooltip
@@ -291,7 +291,6 @@ def main(page: ft.Page):
         return ft.Colors.GREY_200 if is_dark() else ft.Colors.GREY_900
 
     def text_muted():
-        # FIX: Change GREY_600 to GREY_800 for better contrast on light mode
         return ft.Colors.GREY_400 if is_dark() else ft.Colors.GREY_800
 
     def divider_color():
@@ -319,7 +318,6 @@ def main(page: ft.Page):
             ref["text_box"].opacity = 1
             ref["text_box"].padding = ft.padding.only(right=8)
 
-        # FIX: Use text_muted() for inactive items for better contrast
         base = text_muted()
         if active:
             ref["icon"].color = TXT_ACTIVE_DARK if is_dark() else TXT_ACTIVE_LIGHT
@@ -364,16 +362,10 @@ def main(page: ft.Page):
 
     def toggle_theme(_=None):
         state["dark"] = not state["dark"]
-        if is_dark():
-            page.theme_mode = ft.ThemeMode.DARK
-            page.bgcolor = ft.Colors.GREY_900
-            theme_icon.name = "light_mode"
-            theme_text.value = "Modo Claro"
-        else:
-            page.theme_mode = ft.ThemeMode.LIGHT
-            page.bgcolor = ft.Colors.GREY_100
-            theme_icon.name = "dark_mode"
-            theme_text.value = "Modo Escuro"
+        page.theme_mode = ft.ThemeMode.DARK if is_dark() else ft.ThemeMode.LIGHT
+        page.bgcolor = ft.Colors.GREY_900 if is_dark() else ft.Colors.GREY_100
+        theme_icon.name = "light_mode" if is_dark() else "dark_mode"
+        theme_text.value = "Modo Claro" if is_dark() else "Modo Escuro"
         update_theme_Colors()
 
     def make_item(key: str, icon_name: str, label: str, active=False):
@@ -436,7 +428,7 @@ def main(page: ft.Page):
         elif state["active"] == "atas":
             set_content(AtasPage())
         else:
-             page.update()
+            page.update()
 
     # ==============================
     # DASHBOARD VIEW
@@ -556,26 +548,24 @@ def main(page: ft.Page):
             bg, fg = (ft.Colors.GREEN_100, ft.Colors.GREEN_800)
             bgd, fgd = (ft.Colors.GREEN_900, ft.Colors.GREEN_100)
         elif variant == "amber":
-            # FIX: Use AMBER_50 for background in light mode to improve contrast
             bg, fg = (ft.Colors.AMBER_50, ft.Colors.AMBER_900)
             bgd, fgd = (ft.Colors.AMBER_900, ft.Colors.AMBER_100)
         else:
             bg, fg = (ft.Colors.RED_100, ft.Colors.RED_800)
             bgd, fgd = (ft.Colors.RED_900, ft.Colors.RED_100)
 
-        # Cores tema-aware
         bg_final = bgd if is_dark() else bg
         fg_final = fgd if is_dark() else fg
 
         return ft.Container(
-            height=size_cfg["h"],  # altura fixa para centralização vertical real
+            height=size_cfg["h"],
             padding=ft.padding.symmetric(vertical=0, horizontal=size_cfg["px"]),
             bgcolor=bg_final,
             border_radius=999,
             content=ft.Row(
                 controls=[ft.Text(text, size=size_cfg["font"], weight=ft.FontWeight.W_600, color=fg_final)],
                 alignment=ft.MainAxisAlignment.CENTER,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,  # garante centro vertical
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=0,
             ),
         )
@@ -588,7 +578,7 @@ def main(page: ft.Page):
             return "amber"
         return "red"
 
-    def delete_ata(ata: dict):
+    def _perform_delete_ata(ata: dict):
         for key in ["vigentes", "vencidas", "aVencer"]:
             lista = ATAS.get(key, [])
             if ata in lista:
@@ -596,39 +586,61 @@ def main(page: ft.Page):
                 break
         show_snack("Ata excluída com sucesso!")
         set_content(AtasPage())
+        
+    # MODIFICADO: Função para criar e exibir o modal de confirmação usando page.open()
+    def show_confirm_delete_modal(ata: dict):
+        # Define o diálogo primeiro para que possa ser referenciado nos handlers
+        confirm_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Confirmar Exclusão"),
+            content=ft.Text(f"Tem certeza que deseja excluir a ata nº {ata.get('numero', '')}? Esta ação é irreversível."),
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
+        # Define as ações que podem fechar o diálogo
+        def handle_confirm(e):
+            _perform_delete_ata(ata)
+            page.close(confirm_dialog)
+
+        def handle_cancel(e):
+            page.close(confirm_dialog)
+
+        # Atribui as ações ao diálogo
+        confirm_dialog.actions = [
+            pill_button("Cancelar", variant="text", on_click=handle_cancel),
+            pill_button(
+                "Excluir", 
+                variant="filled",
+                on_click=handle_confirm,
+                style=ft.ButtonStyle(bgcolor=ft.Colors.RED, color=ft.Colors.WHITE)
+            ),
+        ]
+
+        # Abre o diálogo
+        page.open(confirm_dialog)
 
     def AtasSectionCard(title: str, icon_name: str, data: list[dict], variant: str | None = None):
         def vsep(h=28):
             return ft.Container(width=1, height=h, bgcolor=divider_color())
 
-        # --- Inferência robusta do variant (case-insensitive) ---
         if not variant:
             t = (title or "").lower()
-            if "vigentes" in t:
-                variant = "green"
-            elif "a vencer" in t or "à vencer" in t:
-                variant = "amber"
-            elif "vencidas" in t:
-                variant = "red"
-            else:
-                variant = "red"  # fallback seguro
+            if "vigentes" in t: variant = "green"
+            elif "a vencer" in t or "à vencer" in t: variant = "amber"
+            elif "vencidas" in t: variant = "red"
+            else: variant = "red"
 
-        # --- Paleta de cores do card (tema-aware) ---
         palette = ATA_CARD_PALETTE[variant]
         bg_color = palette["bg_dark"] if is_dark() else palette["bg_light"]
         icon_color = palette["icon_color_dark"] if is_dark() else palette["icon_color"]
 
-        # --- Cabeçalho do card ---
         header = ft.Row(
             alignment=ft.MainAxisAlignment.START,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=10,
             controls=[
                 ft.Container(
-                    width=28,
-                    height=28,
-                    border_radius=999,
-                    bgcolor=bg_color,
+                    width=28, height=28, border_radius=999, bgcolor=bg_color,
                     alignment=ft.alignment.center,
                     content=ft.Icon(icon_name, size=18, color=icon_color),
                 ),
@@ -636,7 +648,6 @@ def main(page: ft.Page):
             ],
         )
 
-        # --- Cabeçalho da tabela ---
         cols_head = ft.Container(
             padding=ft.padding.symmetric(vertical=10, horizontal=12),
             bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.BLACK),
@@ -645,61 +656,39 @@ def main(page: ft.Page):
                 spacing=8,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    ft.Container(ft.Text("NÚMERO", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center),
-                    vsep(),
-                    ft.Container(ft.Text("VIGÊNCIA", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center),
-                    vsep(),
-                    ft.Container(ft.Text("OBJETO", size=11, color=text_muted()), expand=3, alignment=ft.alignment.center),
-                    vsep(),
-                    ft.Container(ft.Text("FORNECEDOR", size=11, color=text_muted()), expand=3, alignment=ft.alignment.center),
-                    vsep(),
-                    ft.Container(ft.Text("SITUAÇÃO", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center),
-                    vsep(),
+                    ft.Container(ft.Text("NÚMERO", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center), vsep(),
+                    ft.Container(ft.Text("VIGÊNCIA", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center), vsep(),
+                    ft.Container(ft.Text("OBJETO", size=11, color=text_muted()), expand=3, alignment=ft.alignment.center), vsep(),
+                    ft.Container(ft.Text("FORNECEDOR", size=11, color=text_muted()), expand=3, alignment=ft.alignment.center), vsep(),
+                    ft.Container(ft.Text("SITUAÇÃO", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center), vsep(),
                     ft.Container(ft.Text("AÇÕES", size=11, color=text_muted()), width=140, alignment=ft.alignment.center),
                 ],
             ),
         )
 
-        # --- Linhas da tabela ---
         rows_ui = []
         for ata in data:
             rows_ui.append(
                 ft.Container(
                     padding=ft.padding.symmetric(vertical=14, horizontal=12),
                     content=ft.Row(
-                        spacing=8,
-                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
-                            ft.Container(ft.Text(ata.get("numero", ""), color=text_color()), expand=2, alignment=ft.alignment.center),
-                            vsep(24),
-                            ft.Container(ft.Text(ata.get("vigencia", ""), color=text_muted()), expand=2, alignment=ft.alignment.center),
-                            vsep(24),
-                            ft.Container(ft.Text(ata.get("objeto", ""), color=text_muted()), expand=3, alignment=ft.alignment.center),
-                            vsep(24),
-                            ft.Container(ft.Text(ata.get("fornecedor", ""), color=text_muted()), expand=3, alignment=ft.alignment.center),
-                            vsep(24),
-                            
+                            ft.Container(ft.Text(ata.get("numero", ""), color=text_color()), expand=2, alignment=ft.alignment.center), vsep(24),
+                            ft.Container(ft.Text(ata.get("vigencia", ""), color=text_muted()), expand=2, alignment=ft.alignment.center), vsep(24),
+                            ft.Container(ft.Text(ata.get("objeto", ""), color=text_muted()), expand=3, alignment=ft.alignment.center), vsep(24),
+                            ft.Container(ft.Text(ata.get("fornecedor", ""), color=text_muted()), expand=3, alignment=ft.alignment.center), vsep(24),
+                            ft.Container(badge(ata["situacao"], situacao_to_variant(ata["situacao"]), size="md"), expand=2, alignment=ft.alignment.center), vsep(24),
                             ft.Container(
-                                badge(ata["situacao"], situacao_to_variant(ata["situacao"]), size="md"),
-                                expand=2,
-                                alignment=ft.alignment.center,  # mantém centralizado na célula
-                            ),
-
-                            vsep(24),
-                            ft.Container(
-                                alignment=ft.alignment.center,
-                                width=140,
+                                alignment=ft.alignment.center, width=140,
                                 content=ft.Row(
-                                    spacing=6,
-                                    alignment=ft.MainAxisAlignment.CENTER,
+                                    spacing=6, alignment=ft.MainAxisAlignment.CENTER,
                                     controls=[
                                         ft.IconButton(icon="visibility", tooltip="Ver", on_click=lambda e, a=ata: show_ata_details(a)),
                                         ft.IconButton(icon="edit", tooltip="Editar", on_click=lambda e, a=ata: show_ata_edit(a)),
                                         ft.IconButton(
-                                            icon="delete",
-                                            tooltip="Excluir",
-                                            icon_color=ft.Colors.RED_400,
-                                            on_click=lambda e, a=ata: delete_ata(a),
+                                            icon="delete", tooltip="Excluir", icon_color=ft.Colors.RED_400,
+                                            on_click=lambda e, a=ata: show_confirm_delete_modal(a),
                                         ),
                                     ],
                                 ),
@@ -709,24 +698,15 @@ def main(page: ft.Page):
                 )
             )
 
-        # --- Container final do card ---
         return ft.Container(
-            col=12,
-            bgcolor=surface_bg(),
-            border_radius=16,
-            padding=16,
-            shadow=ft.BoxShadow(
-                blur_radius=16,
-                spread_radius=1,
-                color=ft.Colors.with_opacity(0.10, ft.Colors.BLACK),
-            ),
+            col=12, bgcolor=surface_bg(), border_radius=16, padding=16,
+            shadow=ft.BoxShadow(blur_radius=16, spread_radius=1, color=ft.Colors.with_opacity(0.10, ft.Colors.BLACK)),
             content=ft.Column(
                 spacing=10,
                 controls=[header, cols_head, *rows_ui] if data else [header, ft.Text("Nenhum registro.", color=text_muted())],
             ),
         )
 
-    # === FILTROS: helpers de label/contagem ===
     def _filters_count() -> int:
         return sum(state["filters"].values())
 
@@ -735,33 +715,18 @@ def main(page: ft.Page):
         return f"Filtrar ({n})" if n else "Filtrar"
 
     def AtasPage():
-        # Barra de busca (altura igual à pílula "md")
         input_padding = ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"])
         search = tf(
-            hint_text="Buscar atas...",
-            prefix_icon=ft.Icons.SEARCH,
-            border_radius=BORDER_RADIUS_PILL,
-            content_padding=input_padding,
-            bgcolor=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
-            height=PILL["md"]["h"],
-            expand=True,
+            hint_text="Buscar atas...", prefix_icon=ft.Icons.SEARCH,
+            border_radius=BORDER_RADIUS_PILL, content_padding=input_padding,
+            bgcolor=ft.Colors.with_opacity(0.04, ft.Colors.BLACK), height=PILL["md"]["h"], expand=True,
         )
 
-        # === FILTROS ===
         _cfg = PILL["md"]
         _pad = ft.padding.symmetric(vertical=0, horizontal=_cfg["px"])
 
-        # rótulo dinâmico
-        def _filters_count() -> int:
-            return sum(state["filters"].values())
-
-        def _filter_label() -> str:
-            n = _filters_count()
-            return f"Filtrar ({n})" if n else "Filtrar"
-
         lbl_filter = ft.Text(_filter_label(), size=_cfg["font"], weight=ft.FontWeight.W_500, color=text_color())
 
-        # checkboxes sincronizados com o estado
         cb_vigente = ft.Checkbox(label="Vigentes", value=state["filters"]["vigente"])
         cb_vencida = ft.Checkbox(label="Vencidas", value=state["filters"]["vencida"])
         cb_a_vencer = ft.Checkbox(label="A Vencer", value=state["filters"]["a_vencer"])
@@ -792,24 +757,15 @@ def main(page: ft.Page):
         def _on_filter_apply(_=None):
             set_content(AtasPage())
 
-        # Conteúdo do menu de filtros
         menu_box = ft.Container(
-            bgcolor=surface_bg(),
-            border=ft.border.all(1, border_token()),
-            border_radius=16,
-            padding=12,
-            width=280,
+            bgcolor=surface_bg(), border=ft.border.all(1, border_token()),
+            border_radius=16, padding=12, width=280,
             content=ft.Column(
-                tight=True,
-                spacing=8,
+                tight=True, spacing=8,
                 controls=[
-                    cb_vigente,
-                    cb_vencida,
-                    cb_a_vencer,
-                    ft.Container(height=8),
+                    cb_vigente, cb_vencida, cb_a_vencer, ft.Container(height=8),
                     ft.Row(
-                        alignment=ft.MainAxisAlignment.END,
-                        spacing=8,
+                        alignment=ft.MainAxisAlignment.END, spacing=8,
                         controls=[
                             pill_button("Limpar", variant="text", size="sm", on_click=_on_filter_clear),
                             pill_button("Aplicar", variant="filled", size="sm", icon="done", on_click=_on_filter_apply),
@@ -819,80 +775,53 @@ def main(page: ft.Page):
             ),
         )
 
-        # ===== Botão de FILTRO com a borda de pílula à esquerda =====
-        # FIX: The SubmenuButton does not have a style property like other buttons.
-        # This implementation uses a manual button group approach for proper styling.
         filter_btn = ft.Container(
             content=ft.SubmenuButton(
                 content=ft.Row(
-                    spacing=8,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                    controls=[
-                        ft.Icon("filter_list", size=18, color=text_color()),
-                        lbl_filter,
-                    ],
+                    spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls=[ft.Icon("filter_list", size=18, color=text_color()), lbl_filter],
                 ),
                 controls=[ft.MenuItemButton(close_on_click=False, content=menu_box)],
             ),
-            padding=_pad,
-            height=_cfg["h"],
+            padding=_pad, height=_cfg["h"],
             border=ft.border.only(left=ft.BorderSide(BORDER_WIDTH, border_token()), top=ft.BorderSide(BORDER_WIDTH, border_token()), bottom=ft.BorderSide(BORDER_WIDTH, border_token())),
             border_radius=ft.border_radius.only(top_left=999, bottom_left=999, top_right=0, bottom_right=0)
         )
 
-        # Botão "Ordenar" (Outlined)
         btn_sort = ft.Container(
             content=ft.OutlinedButton(
-                text="Ordenar",
-                icon="sort",
+                text="Ordenar", icon="sort",
                 style=ft.ButtonStyle(
-                    shape=ft.RoundedRectangleBorder(
-                        radius=ft.border_radius.only(top_left=0, bottom_left=0, top_right=999, bottom_right=999)
-                    ),
+                    shape=ft.RoundedRectangleBorder(radius=ft.border_radius.only(top_left=0, bottom_left=0, top_right=999, bottom_right=999)),
                     side=ft.BorderSide(BORDER_WIDTH, border_token()),
-                    color=text_color(),
-                    icon_color=text_color(),
+                    color=text_color(), icon_color=text_color(),
                 ),
             ),
-            height=_cfg["h"],
-            padding=_pad,
+            height=_cfg["h"], padding=_pad,
         )
 
-        # FIX: Combine the filter and sort buttons into a single row with negative spacing
         btn_group = ft.Row(
-            spacing=-1,
-            controls=[filter_btn, btn_sort],
+            spacing=-1, controls=[filter_btn, btn_sort],
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
-        # Botão primário "Nova Ata"
         btn_new = ft.FilledButton(
-            text="Nova Ata",
-            icon="add",
-            height=_cfg["h"],
-            on_click=lambda _: show_ata_edit({}), # Abre formulário vazio
+            text="Nova Ata", icon="add", height=_cfg["h"],
+            on_click=lambda _: show_ata_edit({}),
             style=ft.ButtonStyle(
-                padding=_pad,
-                shape=ft.RoundedRectangleBorder(radius=999),
-                bgcolor=ft.Colors.BLUE_600,
-                color=ft.Colors.WHITE,
+                padding=_pad, shape=ft.RoundedRectangleBorder(radius=999),
+                bgcolor=ft.Colors.BLUE_600, color=ft.Colors.WHITE,
             ),
         )
 
         actions = ft.Row(
-            controls=[btn_group, btn_new],
-            spacing=8,
+            controls=[btn_group, btn_new], spacing=8,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
         top = ft.Container(
-            bgcolor=surface_bg(),
-            border_radius=16,
-            padding=16,
-            shadow=ft.BoxShadow(
-                blur_radius=12, spread_radius=1,
-                color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK),
-            ),
+            bgcolor=surface_bg(), border_radius=16, padding=16,
+            shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK)),
             content=ft.Row(
                 controls=[ft.Container(content=search, expand=True), actions],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -901,7 +830,6 @@ def main(page: ft.Page):
             ),
         )
 
-        # === FILTROS: decide quais cards mostrar ===
         filter_state = state.get("filters", {key: False for key in FILTER_KEYS})
         show_all = not any(filter_state.values())
         cards = []
@@ -923,8 +851,6 @@ def main(page: ft.Page):
         )
         return grid
 
-
-    # --------- Detalhes ---------
     def show_ata_details(ata: dict):
         title = ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color())
         subtitle = ft.Text(f"Nº {ata['numero']}", size=13, color=text_muted())
@@ -934,20 +860,8 @@ def main(page: ft.Page):
                 ft.Column(controls=[title, subtitle], spacing=2, expand=True),
                 ft.Row(
                     controls=[
-                        # Voltar para a lista de atas
-                        pill_button(
-                            "Voltar",
-                            icon="arrow_back",
-                            variant="outlined",
-                            on_click=lambda e: set_content(AtasPage()),
-                        ),
-                        # Ir para a edição desta mesma ata
-                        pill_button(
-                            "Editar",
-                            icon="edit",
-                            variant="filled",
-                            on_click=lambda e, ata_=ata: show_ata_edit(ata_),
-                        ),
+                        pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: set_content(AtasPage())),
+                        pill_button("Editar", icon="edit", variant="filled", on_click=lambda e, ata_=ata: show_ata_edit(ata_)),
                     ],
                     spacing=8,
                 ),
@@ -1017,30 +931,15 @@ def main(page: ft.Page):
         view = ft.Column(controls=[ft.Container(content=header, padding=0), grid_top, itens_card], spacing=16)
         set_content(view)
 
-    # --------- Edição ---------
     def show_ata_edit(ata: dict):
         is_new = not bool(ata)
         
-        # --- Definição dos campos com HINT_TEXT ---
-        numero = tf(
-            label="Número da Ata", 
-            value=ata.get("numero", ""),
-            hint_text="0000/0000"
-        )
-        documento_sei = tf(
-            label="Documento SEI", 
-            value=ata.get("documentoSei", ""),
-            hint_text="00000.000000/0000-00"
-        )
-        data_vigencia = tf(
-            label="Data de Vigência", 
-            value=ata.get("vigencia", ""),
-            hint_text="DD/MM/AAAA"
-        )
+        numero = tf(label="Número da Ata", value=ata.get("numero", ""), hint_text="0000/0000")
+        documento_sei = tf(label="Documento SEI", value=ata.get("documentoSei", ""), hint_text="00000.000000/0000-00")
+        data_vigencia = tf(label="Data de Vigência", value=ata.get("vigencia", ""), hint_text="DD/MM/AAAA")
         objeto = tf(label="Objeto", value=ata.get("objeto", ""))
         fornecedor = tf(label="Fornecedor", value=ata.get("fornecedor", ""))
 
-        # --- Aplicação das máscaras ---
         def on_num_change(e):
             e.control.value = MaskUtils.aplicar_mascara_numero_ata(e.control.value)
             e.control.update()
@@ -1055,107 +954,58 @@ def main(page: ft.Page):
             e.control.value = MaskUtils.aplicar_mascara_telefone(e.control.value)
             e.control.update()
 
-        # --- Listas dinâmicas de campos ---
         tels_data = ata.get("contatos", {}).get("telefone", [""])
-        tels_controls = [
-            tf(
-                label=f"Telefone {i+1}", 
-                value=v, 
-                prefix_icon=ft.Icons.PHONE, 
-                on_change=on_tel_change,
-                hint_text="(XX) XXXXX-XXXX"
-            ) for i, v in enumerate(tels_data)
-        ]
+        tels_controls = [tf(label=f"Telefone {i+1}", value=v, prefix_icon=ft.Icons.PHONE, on_change=on_tel_change, hint_text="(XX) XXXXX-XXXX") for i, v in enumerate(tels_data)]
         
         emails_data = ata.get("contatos", {}).get("email", [""])
-        emails_controls = [
-            tf(
-                label=f"E-mail {i+1}", 
-                value=v, 
-                prefix_icon=ft.Icons.MAIL,
-                hint_text="exemplo@email.com"
-            ) for i, v in enumerate(emails_data)
-        ]
+        emails_controls = [tf(label=f"E-mail {i+1}", value=v, prefix_icon=ft.Icons.MAIL, hint_text="exemplo@email.com") for i, v in enumerate(emails_data)]
 
         itens_data = ata.get("itens", [])[:] if ata.get("itens") else [{"descricao": "", "quantidade": "", "valorUnitario": ""}]
         itens_fields_controls = []
 
-        # --- Lógica de validação do formulário ---
         def validate_form(e):
-            # Limpa erros anteriores
-            all_fields = [numero, documento_sei, data_vigencia, objeto, fornecedor] + \
-                         tels_controls + emails_controls + \
-                         [item for row in itens_fields_controls for item in row.controls if isinstance(item, ft.TextField)]
-            
-            for field in all_fields:
-                field.error_text = None
+            all_fields = [numero, documento_sei, data_vigencia, objeto, fornecedor] + tels_controls + emails_controls + [item for row in itens_fields_controls for item in row.controls if isinstance(item, ft.TextField)]
+            for field in all_fields: field.error_text = None
 
             is_valid = True
-
-            # Validações individuais
             if not numero.value or not Validators.validar_numero_ata(numero.value):
-                numero.error_text = "Formato esperado: 0000/0000"
-                is_valid = False
-            
+                numero.error_text = "Formato esperado: 0000/0000"; is_valid = False
             if not documento_sei.value or not Validators.validar_documento_sei(documento_sei.value):
-                documento_sei.error_text = "Formato esperado: 00000.000000/0000-00"
-                is_valid = False
-            
+                documento_sei.error_text = "Formato esperado: 00000.000000/0000-00"; is_valid = False
             if not data_vigencia.value or not Validators.validar_data_vigencia(data_vigencia.value):
-                data_vigencia.error_text = "Data inválida. Use DD/MM/AAAA."
-                is_valid = False
-
+                data_vigencia.error_text = "Data inválida. Use DD/MM/AAAA."; is_valid = False
             if not objeto.value.strip():
-                objeto.error_text = "O objeto não pode ser vazio."
-                is_valid = False
-            
+                objeto.error_text = "O objeto não pode ser vazio."; is_valid = False
             if not fornecedor.value.strip():
-                fornecedor.error_text = "O fornecedor não pode ser vazio."
-                is_valid = False
+                fornecedor.error_text = "O fornecedor não pode ser vazio."; is_valid = False
 
-            # Valida contatos
-            telefones_validos = [tel for tel in tels_controls if tel.value and Validators.validar_telefone(tel.value)]
-            if not telefones_validos:
+            if not [tel for tel in tels_controls if tel.value and Validators.validar_telefone(tel.value)]:
                 is_valid = False
                 for tel in tels_controls:
-                    if not tel.value or not Validators.validar_telefone(tel.value):
-                        tel.error_text = "Telefone inválido ou vazio."
+                    if not tel.value or not Validators.validar_telefone(tel.value): tel.error_text = "Telefone inválido ou vazio."
 
-            emails_validos = [email for email in emails_controls if email.value and Validators.validar_email(email.value)]
-            if not emails_validos:
+            if not [email for email in emails_controls if email.value and Validators.validar_email(email.value)]:
                 is_valid = False
                 for email in emails_controls:
-                        if not email.value or not Validators.validar_email(email.value):
-                            email.error_text = "E-mail inválido ou vazio."
+                    if not email.value or not Validators.validar_email(email.value): email.error_text = "E-mail inválido ou vazio."
             
-            # Valida itens
             for row in itens_fields_controls:
                 desc_field, qtd_field, vu_field = row.controls[0], row.controls[1], row.controls[2]
-                if not desc_field.value.strip():
-                    desc_field.error_text = "Obrigatório"
-                    is_valid = False
-                if not Validators.validar_quantidade_positiva(qtd_field.value):
-                    qtd_field.error_text = "Inválido"
-                    is_valid = False
-                if not Validators.validar_valor_positivo(vu_field.value):
-                    vu_field.error_text = "Inválido"
-                    is_valid = False
+                if not desc_field.value.strip(): desc_field.error_text = "Obrigatório"; is_valid = False
+                if not Validators.validar_quantidade_positiva(qtd_field.value): qtd_field.error_text = "Inválido"; is_valid = False
+                if not Validators.validar_valor_positivo(vu_field.value): vu_field.error_text = "Inválido"; is_valid = False
 
             page.update()
-
             if is_valid:
-                show_snack("Ata salva com sucesso!")
-                set_content(AtasPage())
+                show_snack("Ata salva com sucesso!"); set_content(AtasPage())
 
-        # --- Funções para UI dinâmica ---
         def build_item_row(idx, item_data):
             desc = tf(label="Descrição", value=item_data.get("descricao", ""), expand=True)
             qtd = tf(label="Qtd.", value=str(item_data.get("quantidade", "")), width=80)
             vu = tf(label="Valor Unit.", value=item_data.get("valorUnitario", ""), width=120)
             
             def delete_item_row(e, row_to_delete):
-                itens_fields_controls.remove(row_to_delete)
-                refresh_ui()
+                itens_fields_controls.remove(row_to_delete); refresh_ui()
 
             row = ft.Row([desc, qtd, vu], spacing=8, alignment=ft.MainAxisAlignment.START)
             del_btn = ft.IconButton(icon="delete", tooltip="Excluir", on_click=lambda e, r=row: delete_item_row(e, r))
@@ -1166,90 +1016,45 @@ def main(page: ft.Page):
             itens_fields_controls.append(build_item_row(i, it))
 
         def add_tel(e):
-            tels_controls.append(
-                tf(
-                    label=f"Telefone {len(tels_controls)+1}", 
-                    value="", 
-                    prefix_icon=ft.Icons.PHONE, 
-                    on_change=on_tel_change,
-                    hint_text="(XX) XXXXX-XXXX"
-                )
-            )
-            refresh_ui()
+            tels_controls.append(tf(label=f"Telefone {len(tels_controls)+1}", value="", prefix_icon=ft.Icons.PHONE, on_change=on_tel_change, hint_text="(XX) XXXXX-XXXX")); refresh_ui()
 
         def add_email(e):
-            emails_controls.append(
-                tf(
-                    label=f"E-mail {len(emails_controls)+1}", 
-                    value="", 
-                    prefix_icon=ft.Icons.MAIL,
-                    hint_text="exemplo@email.com"
-                )
-            )
-            refresh_ui()
+            emails_controls.append(tf(label=f"E-mail {len(emails_controls)+1}", value="", prefix_icon=ft.Icons.MAIL, hint_text="exemplo@email.com")); refresh_ui()
         
         def add_item(e):
-            itens_fields_controls.append(build_item_row(len(itens_fields_controls), {}))
-            refresh_ui()
+            itens_fields_controls.append(build_item_row(len(itens_fields_controls), {})); refresh_ui()
 
         def refresh_ui():
-            # Renomeia labels e recria a lista de controles com botões de exclusão
-            def create_deletable_row(ctrl_list, ctrl, index, kind):
-                def delete_control(e):
-                    ctrl_list.pop(index)
-                    refresh_ui()
-                return ft.Row([ctrl, ft.IconButton(icon="delete", tooltip="Excluir", on_click=delete_control)], spacing=8)
+            def create_deletable_row(ctrl_list, ctrl, index):
+                def delete_control(e): ctrl_list.pop(index); refresh_ui()
+                return ft.Row([ctrl, ft.IconButton(icon="delete", tooltip="Excluir", on_click=delete_control)], spacing=8, alignment=ft.MainAxisAlignment.START)
             
-            for i, tel in enumerate(tels_controls):
-                tel.label = f"Telefone {i+1}"
-            
-            for i, email in enumerate(emails_controls):
-                email.label = f"E-mail {i+1}"
+            for i, tel in enumerate(tels_controls): tel.label = f"Telefone {i+1}"
+            for i, email in enumerate(emails_controls): email.label = f"E-mail {i+1}"
 
             contacts_col.controls = [
-                ft.Row(
-                    [ft.Text("Contatos", size=16, weight=ft.FontWeight.W_600, color=text_color()),
-                     ft.Row([
-                         pill_button("Adicionar telefone", icon="add", variant="text", size="sm", on_click=add_tel),
-                         pill_button("Adicionar e-mail", icon="add", variant="text", size="sm", on_click=add_email),
-                     ], spacing=4)
-                    ],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-                ),
-                ft.Column([create_deletable_row(tels_controls, t, i, "telefone") for i, t in enumerate(tels_controls)], spacing=8),
-                ft.Column([create_deletable_row(emails_controls, m, i, "email") for i, m in enumerate(emails_controls)], spacing=8),
+                ft.Row([ft.Text("Contatos", size=16, weight=ft.FontWeight.W_600, color=text_color()), ft.Row([pill_button("Adicionar telefone", icon="add", variant="text", size="sm", on_click=add_tel), pill_button("Adicionar e-mail", icon="add", variant="text", size="sm", on_click=add_email)], spacing=4)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                ft.Column([create_deletable_row(tels_controls, t, i) for i, t in enumerate(tels_controls)], spacing=8),
+                ft.Column([create_deletable_row(emails_controls, m, i) for i, m in enumerate(emails_controls)], spacing=8),
             ]
             
             itens_col.controls = [
-                ft.Row(
-                    [ft.Text("Itens", size=16, weight=ft.FontWeight.W_600, color=text_color()),
-                     pill_button("Adicionar", icon="add", variant="outlined", size="sm", on_click=add_item)],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-                ),
+                ft.Row([ft.Text("Itens", size=16, weight=ft.FontWeight.W_600, color=text_color()), pill_button("Adicionar", icon="add", variant="outlined", size="sm", on_click=add_item)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Column(itens_fields_controls, spacing=8)
             ]
             page.update()
 
-        # --- Layout do formulário ---
         header = ft.Row(
             controls=[
-                ft.Column([ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color()),
-                           ft.Text("Editar Ata" if not is_new else "Nova Ata", size=13, color=text_muted())], spacing=2, expand=True),
-                ft.Row([
-                    pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: set_content(AtasPage())),
-                    pill_button("Salvar", icon="save", variant="filled", on_click=validate_form),
-                ], spacing=8),
+                ft.Column([ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color()), ft.Text("Editar Ata" if not is_new else "Nova Ata", size=13, color=text_muted())], spacing=2, expand=True),
+                ft.Row([pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: set_content(AtasPage())), pill_button("Salvar", icon="save", variant="filled", on_click=validate_form)], spacing=8),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         )
 
         dados_gerais = ft.Container(
             bgcolor=surface_bg(), border_radius=16, padding=16,
-            content=ft.Column(
-                controls=[ft.Text("Dados Gerais", size=16, weight=ft.FontWeight.W_600, color=text_color()),
-                          numero, documento_sei, data_vigencia, objeto, fornecedor],
-                spacing=10,
-            ),
+            content=ft.Column(controls=[ft.Text("Dados Gerais", size=16, weight=ft.FontWeight.W_600, color=text_color()), numero, documento_sei, data_vigencia, objeto, fornecedor], spacing=10),
         )
 
         contacts_col = ft.Column(spacing=10)
@@ -1257,8 +1062,7 @@ def main(page: ft.Page):
 
         grid_top = ft.ResponsiveRow(
             columns=12, spacing=16, run_spacing=16,
-            controls=[ft.Container(content=dados_gerais, col={"xs": 12, "lg": 6}),
-                      ft.Container(content=contatos_card, col={"xs": 12, "lg": 6})]
+            controls=[ft.Container(content=dados_gerais, col={"xs": 12, "lg": 6}), ft.Container(content=contatos_card, col={"xs": 12, "lg": 6})]
         )
 
         itens_col = ft.Column(spacing=10)
@@ -1273,23 +1077,17 @@ def main(page: ft.Page):
         page.snack_bar.open = True
         page.update()
 
-    # ==============================
-    # PÁGINAS SIMPLES (placeholders)
-    # ==============================
     def SimplePage(title: str, subtitle: str):
         return ft.Column(controls=[
             ft.Container(
                 bgcolor=surface_bg(), border_radius=16, padding=16,
-                content=ft.Column(controls=[ft.Text(title, size=18, weight=ft.FontWeight.W_600, color=text_color()),
-                                            ft.Text(subtitle, color=text_muted())], spacing=6))
+                content=ft.Column(controls=[ft.Text(title, size=18, weight=ft.FontWeight.W_600, color=text_color()), ft.Text(subtitle, color=text_muted())], spacing=6))
         ])
 
     # ==============================
     # ASIDE (MENU)
     # ==============================
-    top_logo = ft.Container(height=56, alignment=ft.alignment.center,
-                                      content=ft.Icon("diamond", size=ICON_SIZE, color=ft.Colors.GREY_500),
-                                      padding=ft.padding.only(top=8, bottom=8))
+    top_logo = ft.Container(height=56, alignment=ft.alignment.center, content=ft.Icon("diamond", size=ICON_SIZE, color=ft.Colors.GREY_500), padding=ft.padding.only(top=8, bottom=8))
     menu_icon = ft.Icon("menu", size=ICON_SIZE, rotate=ft.Rotate(0, alignment=ft.alignment.center), animate_rotation=ANIM)
     header_btn = ft.Container(
         content=ft.Row(
@@ -1324,8 +1122,7 @@ def main(page: ft.Page):
         width=0, animate=ANIM, animate_opacity=300, clip_behavior=ft.ClipBehavior.HARD_EDGE,
     )
     theme_btn = ft.Container(
-        content=ft.Row(controls=[theme_icon, theme_text_box], spacing=12,
-                       alignment=ft.MainAxisAlignment.START, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+        content=ft.Row(controls=[theme_icon, theme_text_box], spacing=12, alignment=ft.MainAxisAlignment.START, vertical_alignment=ft.CrossAxisAlignment.CENTER),
         padding=P_ITEM, border_radius=R_ITEM, on_click=toggle_theme, tooltip="Alternar tema",
     )
 
