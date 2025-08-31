@@ -9,16 +9,201 @@ import sqlite3
 import database as db
 
 # ==============================
-# TOKENS / CONSTANTES
+# DESIGN TOKENS
 # ==============================
+
+# MAPA DE TOKENS DE COR
+# ========================================================================================================================
+# | valor_original                                  | token                                      | ocorrências |
+# |-------------------------------------------------|--------------------------------------------|-------------|
+# | ft.Colors.GREY_100                              | bg.app.light                               | 2           |
+# | ft.Colors.GREY_900                              | bg.app.dark                                | 2           |
+# | ft.Colors.WHITE                                 | bg.surface.light                           | 9           |
+# | ft.Colors.GREY_800                              | bg.surface.dark                            | 2           |
+# | ft.Colors.with_opacity(0.04, ft.Colors.BLACK)   | bg.input.default                           | 1           |
+# | ft.Colors.with_opacity(0.03, ft.Colors.BLACK)   | bg.surface.muted                           | 1           |
+# | ft.Colors.GREY_900                              | text.primary.light                         | 1           |
+# | ft.Colors.GREY_200                              | text.primary.dark                          | 1           |
+# | ft.Colors.GREY_800                              | text.muted.light                           | 1           |
+# | ft.Colors.GREY_400                              | text.muted.dark                            | 2           |
+# | ft.Colors.WHITE                                 | text.inverse                               | 2           |
+# | ft.Colors.GREY_300                              | border.default.light                       | 1           |
+# | ft.Colors.GREY_700                              | border.default.dark                        | 1           |
+# | ft.Colors.with_opacity(0.08, ft.Colors.BLACK)   | divider.default.light                      | 3           |
+# | ft.Colors.with_opacity(0.12, ft.Colors.BLACK)   | divider.default.dark                       | 1           |
+# | ft.Colors.BLUE_600                              | brand.primary.bg                           | 1           |
+# | ft.Colors.WHITE                                 | component.sidebar.bg.light                 | 1           |
+# | ft.Colors.GREY_900                              | component.sidebar.bg.dark                  | 1           |
+# | #EDE9FE                                         | component.sidebar.active.bg.light          | 1           |
+# | #2E1065                                         | component.sidebar.active.bg.dark           | 1           |
+# | #8B5CF6                                         | component.sidebar.active.bar.light         | 1           |
+# | #A78BFA                                         | component.sidebar.active.bar.dark          | 1           |
+# | #6D28D9                                         | component.sidebar.active.text.light        | 2           |
+# | #E9D5FF                                         | component.sidebar.active.text.dark         | 2           |
+# | ft.Colors.GREY_500                              | component.sidebar.icon.default             | 1           |
+# | ft.Colors.GREY_600                              | component.sidebar.theme_icon.default       | 1           |
+# | ft.Colors.GREEN_700                             | semantic.success.bg                        | 1           |
+# | ft.Colors.RED_700                               | semantic.error.bg                          | 1           |
+# | ft.Colors.RED                                   | semantic.error.bg_strong                   | 1           |
+# | ft.Colors.RED_400                               | semantic.error.icon                        | 1           |
+# | ft.Colors.AMBER_100                             | semantic.warning.bg.light                  | 1           |
+# | ft.Colors.AMBER_900                             | semantic.warning.bg.dark                   | 2           |
+# | ft.Colors.AMBER                                 | semantic.warning.border                    | 2           |
+# | ft.Colors.GREEN_100                             | status.vigente.bg.light                    | 1           |
+# | ft.Colors.GREEN_900                             | status.vigente.bg.dark                     | 2           |
+# | ft.Colors.GREEN_800                             | status.vigente.text.light                  | 2           |
+# | ft.Colors.GREEN_100                             | status.vigente.text.dark                   | 2           |
+# | ft.Colors.AMBER_50                              | status.a_vencer.bg.light                   | 1           |
+# | ft.Colors.AMBER_900                             | status.a_vencer.bg.dark                    | 1           |
+# | ft.Colors.AMBER_900                             | status.a_vencer.text.light                 | 1           |
+# | ft.Colors.AMBER_100                             | status.a_vencer.text.dark                  | 2           |
+# | ft.Colors.RED_100                               | status.vencida.bg.light                    | 1           |
+# | ft.Colors.RED_900                               | status.vencida.bg.dark                     | 1           |
+# | ft.Colors.RED_800                               | status.vencida.text.light                  | 1           |
+# | ft.Colors.RED_100                               | status.vencida.text.dark                   | 1           |
+# | #10B981                                         | chart.success                              | 2           |
+# | #FF6F00                                         | chart.warning                              | 2           |
+# | #EF4444                                         | chart.error                                | 2           |
+# | #212121                                         | chart.default.light                        | 1           |
+# | #181818                                         | chart.default.dark                         | 1           |
+# | ft.Colors.with_opacity(0.15, ft.Colors.BLACK)   | shadow.strong                              | 1           |
+# | ft.Colors.with_opacity(0.12, ft.Colors.BLACK)   | shadow.default                             | 4           |
+# | ft.Colors.with_opacity(0.10, ft.Colors.BLACK)   | shadow.soft                                | 1           |
+# | ft.Colors.BLACK                                 | base.black                                 | 9           |
+# ========================================================================================================================
+TOKENS = {
+    "colors": {
+        "base": {
+            "black": ft.Colors.BLACK, # Cor base para opacidades (sombras/divisores)
+        },
+        "bg": {
+            "app": {
+                "light": ft.Colors.GREY_100,      # Fundo global da aplicação (modo claro)
+                "dark": ft.Colors.GREY_900,       # Fundo global da aplicação (modo escuro)
+            },
+            "surface": {
+                "light": ft.Colors.WHITE,         # Fundo de cards e superfícies (modo claro)
+                "dark": ft.Colors.GREY_800,       # Fundo de cards e superfícies (modo escuro)
+                "muted": ft.Colors.with_opacity(0.03, ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
+            },
+            "input": {
+                "default": ft.Colors.with_opacity(0.04, ft.Colors.BLACK), # Fundo do campo de busca
+            },
+        },
+        "text": {
+            "primary": {
+                "light": ft.Colors.GREY_900,      # Cor de texto principal (modo claro)
+                "dark": ft.Colors.GREY_200,       # Cor de texto principal (modo escuro)
+            },
+            "muted": {
+                "light": ft.Colors.GREY_800,      # Cor de texto secundário/silenciado (modo claro)
+                "dark": ft.Colors.GREY_400,       # Cor de texto secundário/silenciado (modo escuro)
+            },
+            "inverse": ft.Colors.WHITE,           # Cor de texto sobre fundos coloridos/escuros
+        },
+        "border": {
+            "default": {
+                "light": ft.Colors.GREY_300,      # Cor de borda padrão (modo claro)
+                "dark": ft.Colors.GREY_700,       # Cor de borda padrão (modo escuro)
+            }
+        },
+        "divider": {
+            "default": {
+                "light": ft.Colors.with_opacity(0.08, ft.Colors.BLACK), # Cor de divisores (modo claro)
+                "dark": ft.Colors.with_opacity(0.12, ft.Colors.BLACK),  # Cor de divisores (modo escuro)
+            },
+        },
+        "brand": {
+            "primary": {
+                "bg": ft.Colors.BLUE_600,         # Cor de fundo para botões de ação primária
+            }
+        },
+        "component": {
+            "sidebar": {
+                "bg": {
+                    "light": ft.Colors.WHITE,     # Fundo da sidebar (modo claro)
+                    "dark": ft.Colors.GREY_900,   # Fundo da sidebar (modo escuro)
+                },
+                "active": {
+                    "bg": {
+                        "light": "#EDE9FE",       # Fundo do item ativo da sidebar (modo claro)
+                        "dark": "#2E1065",        # Fundo do item ativo da sidebar (modo escuro)
+                    },
+                    "bar": {
+                        "light": "#8B5CF6",       # Barra lateral do item ativo (modo claro)
+                        "dark": "#A78BFA",        # Barra lateral do item ativo (modo escuro)
+                    },
+                    "text": {
+                        "light": "#6D28D9",       # Texto/ícone do item ativo (modo claro)
+                        "dark": "#E9D5FF",        # Texto/ícone do item ativo (modo escuro)
+                    },
+                },
+                "icon": {
+                    "default": ft.Colors.GREY_500, # Cor do ícone do logo
+                },
+                "theme_icon": {
+                    "default": ft.Colors.GREY_600, # Cor do ícone de alternar tema
+                },
+            },
+        },
+        "semantic": {
+            "success": {
+                "bg": ft.Colors.GREEN_700,        # Fundo para snackbar de sucesso
+            },
+            "error": {
+                "bg": ft.Colors.RED_700,          # Fundo para snackbar de erro
+                "bg_strong": ft.Colors.RED,       # Fundo para botões de exclusão
+                "icon": ft.Colors.RED_400,        # Ícone de exclusão
+            },
+            "warning": {
+                "bg": {
+                    "light": ft.Colors.AMBER_100, # Fundo do card de aviso (modo claro)
+                    "dark": ft.Colors.AMBER_900,  # Fundo do card de aviso (modo escuro)
+                },
+                "border": ft.Colors.AMBER,        # Borda e ícone do card de aviso
+            },
+        },
+        "status": {
+            "vigente": { # Verde
+                "bg": {"light": ft.Colors.GREEN_100, "dark": ft.Colors.GREEN_900},
+                "text": {"light": ft.Colors.GREEN_800, "dark": ft.Colors.GREEN_100},
+            },
+            "a_vencer": { # Âmbar
+                "bg": {"light": ft.Colors.AMBER_50, "dark": ft.Colors.AMBER_900},
+                "text": {"light": ft.Colors.AMBER_900, "dark": ft.Colors.AMBER_100},
+            },
+            "vencida": { # Vermelho
+                "bg": {"light": ft.Colors.RED_100, "dark": ft.Colors.RED_900},
+                "text": {"light": ft.Colors.RED_800, "dark": ft.Colors.RED_100},
+            },
+        },
+        "chart": {
+            "success": "#10B981",                 # Cor verde para gráficos (vigentes)
+            "warning": "#FF6F00",                 # Cor âmbar para gráficos (a vencer)
+            "error": "#EF4444",                   # Cor vermelha para gráficos (vencidas)
+            "default": {
+                "light": "#212121",               # Cor padrão de barras de gráfico (modo claro)
+                "dark": "#181818",                # Cor padrão de barras de gráfico (modo escuro)
+            },
+        },
+        "shadow": {
+            "strong": ft.Colors.with_opacity(0.15, ft.Colors.BLACK),
+            "default": ft.Colors.with_opacity(0.12, ft.Colors.BLACK),
+            "soft": ft.Colors.with_opacity(0.10, ft.Colors.BLACK),
+            "faint": ft.Colors.with_opacity(0.08, ft.Colors.BLACK),
+        },
+    }
+}
+
+# Constantes de layout
 W_COLLAPSED = 80
 W_EXPANDED = 256
-P_ROOT = 16  # p-4 do aside
-P_ITEM = 12  # p-3 dos botões
+P_ROOT = 16
+P_ITEM = 12
 ICON_SIZE = 24
 RADIUS_ASIDE = 24
-R_ITEM = 12  # rounded-lg
-BAR_W = 6  # espessura da barrinha do item ativo
+R_ITEM = 12
+BAR_W = 6
 ANIM = ft.Animation(300, "easeInOut")
 
 # DRY Principle: Define filter keys once.
@@ -39,47 +224,7 @@ BADGE = {
 }
 DEFAULT_BADGE_SIZE = "sm"
 
-# Cores base (menu)
-COLOR_ACTIVE_BG_LIGHT = "#EDE9FE"  # purple-100
-COLOR_ACTIVE_BG_DARK = "#2E1065"  # purple-950 aprox
-COLOR_ACTIVE_BAR_LIGHT = "#8B5CF6"  # purple-500
-COLOR_ACTIVE_BAR_DARK = "#A78BFA"  # purple-300
-
-TXT_ACTIVE_LIGHT = "#6D28D9" # purple-700
-TXT_ACTIVE_DARK = "#E9D5FF"
-
-# Paleta do dashboard
-CHART_GREEN = "#10B981"  # GREEN-500
-CHART_AMBER = "#FF6F00"  # amber-500
-CHART_RED = "#EF4444"  # red-500
-CHART_GRAY_LIGHT = "#E5E7EB"  # gray-200
-CHART_GRAY_DARK = "#334155"  # slate-700
-
-# Dicionário de cores para os cards das atas
-ATA_CARD_PALETTE = {
-    "green": {
-        "bg_light": ft.Colors.GREEN_100,
-        "bg_dark": ft.Colors.GREEN_900,
-        "icon_color": ft.Colors.GREEN_800,
-        "icon_color_dark": ft.Colors.GREEN_100,
-    },
-    "amber": {
-        "bg_light": ft.Colors.AMBER_50,
-        "bg_dark": ft.Colors.AMBER_900,
-        "icon_color": ft.Colors.AMBER_900,
-        "icon_color_dark": ft.Colors.AMBER_100,
-    },
-    "red": {
-        "bg_light": ft.Colors.RED_100,
-        "bg_dark": ft.Colors.RED_900,
-        "icon_color": ft.Colors.RED_800,
-        "icon_color_dark": ft.Colors.RED_100,
-    },
-}
-
 # ==== TOKENS DE BORDA (Design System) ====
-BORDER_COLOR_LIGHT = ft.Colors.GREY_300
-BORDER_COLOR_DARK = ft.Colors.GREY_700
 BORDER_WIDTH = 1
 BORDER_RADIUS_PILL = 999
 
@@ -228,7 +373,7 @@ def main(page: ft.Page):
     page.title = "Painel - Dashboard + Atas (Flet)"
     page.padding = 0
     page.theme_mode = ft.ThemeMode.LIGHT
-    page.bgcolor = ft.Colors.GREY_100
+    page.bgcolor = TOKENS["colors"]["bg"]["app"]["light"]
 
     state = {
         "collapsed": True,
@@ -252,9 +397,16 @@ def main(page: ft.Page):
     content_col = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
     content = ft.Container(expand=True, padding=20, content=content_col)
 
-    # ---- Tokens de borda (tema-aware) ----
-    def border_token():
-        return BORDER_COLOR_DARK if is_dark() else BORDER_COLOR_LIGHT
+    # ---- Color getters (theme-aware) ----
+    def _theme_key(): return "dark" if state["dark"] else "light"
+    def is_dark(): return state["dark"]
+    def is_collapsed(): return state["collapsed"]
+    
+    def border_token(): return TOKENS["colors"]["border"]["default"][_theme_key()]
+    def surface_bg(): return TOKENS["colors"]["bg"]["surface"][_theme_key()]
+    def text_color(): return TOKENS["colors"]["text"]["primary"][_theme_key()]
+    def text_muted(): return TOKENS["colors"]["text"]["muted"][_theme_key()]
+    def divider_color(): return TOKENS["colors"]["divider"]["default"][_theme_key()]
 
     # ---- Factory simples para TextField com borda padrão ----
     def tf(**kwargs):
@@ -297,21 +449,6 @@ def main(page: ft.Page):
         return ft.FilledButton(**common)
 
     # ---------------- helpers gerais ----------------
-    def is_dark(): return state["dark"]
-    def is_collapsed(): return state["collapsed"]
-
-    def surface_bg():
-        return ft.Colors.GREY_800 if is_dark() else ft.Colors.WHITE
-
-    def text_color():
-        return ft.Colors.GREY_200 if is_dark() else ft.Colors.GREY_900
-
-    def text_muted():
-        return ft.Colors.GREY_400 if is_dark() else ft.Colors.GREY_800
-
-    def divider_color():
-        return ft.Colors.with_opacity(0.12 if is_dark() else 0.08, ft.Colors.BLACK)
-
     def set_content(view):
         content_col.controls = [view]
         page.update()
@@ -320,10 +457,11 @@ def main(page: ft.Page):
     def update_item_visual(key: str):
         ref = items[key]
         active = state["active"] == key
+        theme = _theme_key()
 
-        ref["ink"].bgcolor = (COLOR_ACTIVE_BG_DARK if is_dark() else COLOR_ACTIVE_BG_LIGHT) if active else None
+        ref["ink"].bgcolor = TOKENS["colors"]["component"]["sidebar"]["active"]["bg"][theme] if active else None
         ref["bar"].opacity = 1 if active else 0
-        ref["bar"].bgcolor = COLOR_ACTIVE_BAR_DARK if is_dark() else COLOR_ACTIVE_BAR_LIGHT
+        ref["bar"].bgcolor = TOKENS["colors"]["component"]["sidebar"]["active"]["bar"][theme]
 
         if is_collapsed():
             ref["text_box"].width = 0
@@ -336,8 +474,8 @@ def main(page: ft.Page):
 
         base = text_muted()
         if active:
-            ref["icon"].color = TXT_ACTIVE_DARK if is_dark() else TXT_ACTIVE_LIGHT
-            ref["text"].color = TXT_ACTIVE_DARK if is_dark() else TXT_ACTIVE_LIGHT
+            ref["icon"].color = TOKENS["colors"]["component"]["sidebar"]["active"]["text"][theme]
+            ref["text"].color = TOKENS["colors"]["component"]["sidebar"]["active"]["text"][theme]
         else:
             ref["icon"].color = base
             ref["text"].color = base
@@ -378,8 +516,9 @@ def main(page: ft.Page):
 
     def toggle_theme(_=None):
         state["dark"] = not state["dark"]
+        theme = _theme_key()
         page.theme_mode = ft.ThemeMode.DARK if is_dark() else ft.ThemeMode.LIGHT
-        page.bgcolor = ft.Colors.GREY_900 if is_dark() else ft.Colors.GREY_100
+        page.bgcolor = TOKENS["colors"]["bg"]["app"][theme]
         theme_icon.name = "light_mode" if is_dark() else "dark_mode"
         theme_text.value = "Modo Claro" if is_dark() else "Modo Escuro"
         update_theme_Colors()
@@ -409,7 +548,7 @@ def main(page: ft.Page):
         bar = ft.Container(
             width=BAR_W,
             opacity=0,
-            bgcolor=COLOR_ACTIVE_BAR_LIGHT,
+            bgcolor=TOKENS["colors"]["component"]["sidebar"]["active"]["bar"]["light"],
             border_radius=ft.border_radius.only(top_left=R_ITEM, bottom_left=R_ITEM),
         )
 
@@ -433,7 +572,8 @@ def main(page: ft.Page):
 
     # ---------------- THEME / Colors UPDATE ----------------
     def update_theme_Colors():
-        root.bgcolor = ft.Colors.GREY_900 if is_dark() else ft.Colors.WHITE
+        theme = _theme_key()
+        root.bgcolor = TOKENS["colors"]["component"]["sidebar"]["bg"][theme]
         divider_top.bgcolor = divider_color()
         title_text.color = text_color()
         for k in items:
@@ -454,7 +594,7 @@ def main(page: ft.Page):
             bgcolor=surface_bg(),
             border_radius=16,
             padding=20,
-            shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK)),
+            shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=TOKENS["colors"]["shadow"]["default"]),
             content=ft.Column(
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 alignment=ft.MainAxisAlignment.CENTER,
@@ -475,9 +615,9 @@ def main(page: ft.Page):
         av = DASHBOARD["aVencer"]
         ven = total - vig - av
         sections = [
-            ft.PieChartSection(vig, title="", color=CHART_GREEN),
-            ft.PieChartSection(av, title="", color=CHART_AMBER),
-            ft.PieChartSection(ven, title="", color=CHART_RED),
+            ft.PieChartSection(vig, title="", color=TOKENS["colors"]["chart"]["success"]),
+            ft.PieChartSection(av, title="", color=TOKENS["colors"]["chart"]["warning"]),
+            ft.PieChartSection(ven, title="", color=TOKENS["colors"]["chart"]["error"]),
         ]
         chart = ft.PieChart(
             sections=sections,
@@ -488,15 +628,15 @@ def main(page: ft.Page):
         legend = ft.Column(
             controls=[
                 ft.Row([
-                    ft.Container(width=8, height=8, bgcolor=CHART_GREEN, border_radius=20),
+                    ft.Container(width=8, height=8, bgcolor=TOKENS["colors"]["chart"]["success"], border_radius=20),
                     ft.Text(f"Vigentes: {vig} ({vig/total*100:.1f}%)", size=12, color=text_muted()),
                 ], spacing=8),
                 ft.Row([
-                    ft.Container(width=8, height=8, bgcolor=CHART_AMBER, border_radius=20),
+                    ft.Container(width=8, height=8, bgcolor=TOKENS["colors"]["chart"]["warning"], border_radius=20),
                     ft.Text(f"A Vencer: {av} ({av/total*100:.1f}%)", size=12, color=text_muted()),
                 ], spacing=8),
                 ft.Row([
-                    ft.Container(width=8, height=8, bgcolor=CHART_RED, border_radius=20),
+                    ft.Container(width=8, height=8, bgcolor=TOKENS["colors"]["chart"]["error"], border_radius=20),
                     ft.Text(f"Vencidas: {ven} ({ven/total*100:.1f}%)", size=12, color=text_muted()),
                 ], spacing=8),
             ],
@@ -508,7 +648,7 @@ def main(page: ft.Page):
             border_radius=16,
             padding=20,
             shadow=ft.BoxShadow(
-                blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK)
+                blur_radius=18, spread_radius=1, color=TOKENS["colors"]["shadow"]["default"]
             ),
             content=ft.Column(
                 controls=[
@@ -525,8 +665,9 @@ def main(page: ft.Page):
         months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
         values = [0, 0, 0, 0, 0, 0, 0, 0, 10, 45, 60, 0]
         groups = []
+        chart_default_color = TOKENS["colors"]["chart"]["default"][_theme_key()]
         for i, v in enumerate(values):
-            color = (CHART_AMBER if i == 9 else CHART_RED if i == 10 else (CHART_GRAY_DARK if is_dark() else CHART_GRAY_LIGHT))
+            color = (TOKENS["colors"]["chart"]["warning"] if i == 9 else TOKENS["colors"]["chart"]["error"] if i == 10 else chart_default_color)
             groups.append(ft.BarChartGroup(x=i, bar_rods=[ft.BarChartRod(from_y=0, to_y=float(v), width=16, color=color, border_radius=4)]))
         chart = ft.BarChart(
             interactive=False, animate=ft.Animation(300, "easeOut"),
@@ -534,31 +675,32 @@ def main(page: ft.Page):
             bar_groups=groups,
             bottom_axis=ft.ChartAxis(labels=[ft.ChartAxisLabel(value=i, label=ft.Text(m, size=11, color=text_muted())) for i, m in enumerate(months)]),
             left_axis=ft.ChartAxis(show_labels=False),
-            horizontal_grid_lines=ft.ChartGridLines(color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK)),
+            horizontal_grid_lines=ft.ChartGridLines(color=TOKENS["colors"]["shadow"]["faint"]),
         )
         return ft.Container(
             bgcolor=surface_bg(),
             border_radius=16,
             padding=20,
-            shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK)),
+            shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=TOKENS["colors"]["shadow"]["default"]),
             content=ft.Column(controls=[ft.Text("Vencimentos por Mês", size=16, weight=ft.FontWeight.W_600, color=text_color()), chart], spacing=10),
             col={"xs": 12, "lg": 6},
         )
 
     def WarningCard():
         dias_alerta = int(db.get_param("dias_alerta_vencimento", "60") or 60)
+        theme = _theme_key()
         return ft.Container(
-            bgcolor=ft.Colors.AMBER_100 if not is_dark() else ft.Colors.AMBER_900,
+            bgcolor=TOKENS["colors"]["semantic"]["warning"]["bg"][theme],
             border_radius=16,
             padding=20,
             shadow=ft.BoxShadow(
-                blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK)
+                blur_radius=18, spread_radius=1, color=TOKENS["colors"]["shadow"]["default"]
             ),
-            border=ft.border.only(left=ft.BorderSide(4, ft.Colors.AMBER)),
+            border=ft.border.only(left=ft.BorderSide(4, TOKENS["colors"]["semantic"]["warning"]["border"])),
             content=ft.Column(
                 controls=[
                     ft.Row(
-                        [ft.Icon("warning", size=22, color=ft.Colors.AMBER), ft.Text("Atenção", weight=ft.FontWeight.W_600, color=text_color())],
+                        [ft.Icon("warning", size=22, color=TOKENS["colors"]["semantic"]["warning"]["border"]), ft.Text("Atenção", weight=ft.FontWeight.W_600, color=text_color())],
                         spacing=8,
                     ),
                     ft.Text(
@@ -590,20 +732,14 @@ def main(page: ft.Page):
     # ==============================
     def badge(text: str, variant: str, size: str = DEFAULT_BADGE_SIZE):
         size_cfg = BADGE.get(size, BADGE["sm"])
-
-        variant = (variant or "").lower()
-        if variant == "green":
-            bg, fg = (ft.Colors.GREEN_100, ft.Colors.GREEN_800)
-            bgd, fgd = (ft.Colors.GREEN_900, ft.Colors.GREEN_100)
-        elif variant == "amber":
-            bg, fg = (ft.Colors.AMBER_50, ft.Colors.AMBER_900)
-            bgd, fgd = (ft.Colors.AMBER_900, ft.Colors.AMBER_100)
-        else:
-            bg, fg = (ft.Colors.RED_100, ft.Colors.RED_800)
-            bgd, fgd = (ft.Colors.RED_900, ft.Colors.RED_100)
-
-        bg_final = bgd if is_dark() else bg
-        fg_final = fgd if is_dark() else fg
+        theme = _theme_key()
+        
+        variant_key = "vencida" # fallback
+        if variant == "green": variant_key = "vigente"
+        elif variant == "amber": variant_key = "a_vencer"
+        
+        bg_final = TOKENS["colors"]["status"][variant_key]["bg"][theme]
+        fg_final = TOKENS["colors"]["status"][variant_key]["text"][theme]
 
         return ft.Container(
             height=size_cfg["h"],
@@ -632,9 +768,7 @@ def main(page: ft.Page):
         show_snack("Ata excluída com sucesso!")
         set_content(AtasPage())
         
-    # MODIFICADO: Função para criar e exibir o modal de confirmação usando page.open()
     def show_confirm_delete_modal(ata: dict):
-        # Define o diálogo primeiro para que possa ser referenciado nos handlers
         confirm_dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Confirmar Exclusão"),
@@ -642,7 +776,6 @@ def main(page: ft.Page):
             actions_alignment=ft.MainAxisAlignment.END,
         )
 
-        # Define as ações que podem fechar o diálogo
         def handle_confirm(e):
             _perform_delete_ata(ata)
             page.close(confirm_dialog)
@@ -650,18 +783,15 @@ def main(page: ft.Page):
         def handle_cancel(e):
             page.close(confirm_dialog)
 
-        # Atribui as ações ao diálogo
         confirm_dialog.actions = [
             pill_button("Cancelar", variant="text", on_click=handle_cancel),
             pill_button(
                 "Excluir", 
                 variant="filled",
                 on_click=handle_confirm,
-                style=ft.ButtonStyle(bgcolor=ft.Colors.RED, color=ft.Colors.WHITE)
+                style=ft.ButtonStyle(bgcolor=TOKENS["colors"]["semantic"]["error"]["bg_strong"], color=TOKENS["colors"]["text"]["inverse"])
             ),
         ]
-
-        # Abre o diálogo
         page.open(confirm_dialog)
 
     def AtasSectionCard(title: str, icon_name: str, data: list[dict], variant: str | None = None):
@@ -674,10 +804,13 @@ def main(page: ft.Page):
             elif "a vencer" in t or "à vencer" in t: variant = "amber"
             elif "vencidas" in t: variant = "red"
             else: variant = "red"
+        
+        variant_map = {"green": "vigente", "amber": "a_vencer", "red": "vencida"}
+        variant_key = variant_map.get(variant, "vencida")
+        theme = _theme_key()
 
-        palette = ATA_CARD_PALETTE[variant]
-        bg_color = palette["bg_dark"] if is_dark() else palette["bg_light"]
-        icon_color = palette["icon_color_dark"] if is_dark() else palette["icon_color"]
+        bg_color = TOKENS["colors"]["status"][variant_key]["bg"][theme]
+        icon_color = TOKENS["colors"]["status"][variant_key]["text"][theme]
 
         header = ft.Row(
             alignment=ft.MainAxisAlignment.START,
@@ -695,7 +828,7 @@ def main(page: ft.Page):
 
         cols_head = ft.Container(
             padding=ft.padding.symmetric(vertical=10, horizontal=12),
-            bgcolor=ft.Colors.with_opacity(0.03, ft.Colors.BLACK),
+            bgcolor=TOKENS["colors"]["bg"]["surface"]["muted"],
             border_radius=8,
             content=ft.Row(
                 spacing=8,
@@ -732,7 +865,7 @@ def main(page: ft.Page):
                                         ft.IconButton(icon="visibility", tooltip="Ver", on_click=lambda e, a=ata: show_ata_details(a)),
                                         ft.IconButton(icon="edit", tooltip="Editar", on_click=lambda e, a=ata: show_ata_edit(a)),
                                         ft.IconButton(
-                                            icon="delete", tooltip="Excluir", icon_color=ft.Colors.RED_400,
+                                            icon="delete", tooltip="Excluir", icon_color=TOKENS["colors"]["semantic"]["error"]["icon"],
                                             on_click=lambda e, a=ata: show_confirm_delete_modal(a),
                                         ),
                                     ],
@@ -745,7 +878,7 @@ def main(page: ft.Page):
 
         return ft.Container(
             col=12, bgcolor=surface_bg(), border_radius=16, padding=16,
-            shadow=ft.BoxShadow(blur_radius=16, spread_radius=1, color=ft.Colors.with_opacity(0.10, ft.Colors.BLACK)),
+            shadow=ft.BoxShadow(blur_radius=16, spread_radius=1, color=TOKENS["colors"]["shadow"]["soft"]),
             content=ft.Column(
                 spacing=10,
                 controls=[header, cols_head, *rows_ui] if data else [header, ft.Text("Nenhum registro.", color=text_muted())],
@@ -764,7 +897,7 @@ def main(page: ft.Page):
         search = tf(
             hint_text="Buscar atas...", prefix_icon=ft.Icons.SEARCH,
             border_radius=BORDER_RADIUS_PILL, content_padding=input_padding,
-            bgcolor=ft.Colors.with_opacity(0.04, ft.Colors.BLACK), height=PILL["md"]["h"], expand=True,
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"], height=PILL["md"]["h"], expand=True,
         )
 
         def _on_search(e):
@@ -864,7 +997,7 @@ def main(page: ft.Page):
             on_click=lambda _: show_ata_edit({}),
             style=ft.ButtonStyle(
                 padding=_pad, shape=ft.RoundedRectangleBorder(radius=999),
-                bgcolor=ft.Colors.BLUE_600, color=ft.Colors.WHITE,
+                bgcolor=TOKENS["colors"]["brand"]["primary"]["bg"], color=TOKENS["colors"]["text"]["inverse"],
             ),
         )
 
@@ -875,7 +1008,7 @@ def main(page: ft.Page):
 
         top = ft.Container(
             bgcolor=surface_bg(), border_radius=16, padding=16,
-            shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=ft.Colors.with_opacity(0.08, ft.Colors.BLACK)),
+            shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=TOKENS["colors"]["shadow"]["faint"]),
             content=ft.Row(
                 controls=[ft.Container(content=search, expand=True), actions],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -976,8 +1109,8 @@ def main(page: ft.Page):
                 ft.Container(
                     padding=ft.padding.only(top=12),
                     content=ft.Row(controls=[ft.Text("Valor Total", weight=ft.FontWeight.W_600, color=text_muted()),
-                                             ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
-                                      alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                                            ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
+                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                 ),
             ], spacing=10),
         )
@@ -1176,7 +1309,7 @@ def main(page: ft.Page):
         refresh_ui()
 
     def show_snack(msg: str, error: bool = False):
-        color = ft.Colors.RED_700 if error else ft.Colors.GREEN_700
+        color = TOKENS["colors"]["semantic"]["error"]["bg"] if error else TOKENS["colors"]["semantic"]["success"]["bg"]
         page.snack_bar = ft.SnackBar(ft.Text(msg), bgcolor=color)
         page.snack_bar.open = True
         page.update()
@@ -1191,7 +1324,7 @@ def main(page: ft.Page):
     # ==============================
     # ASIDE (MENU)
     # ==============================
-    top_logo = ft.Container(height=56, alignment=ft.alignment.center, content=ft.Icon("diamond", size=ICON_SIZE, color=ft.Colors.GREY_500), padding=ft.padding.only(top=8, bottom=8))
+    top_logo = ft.Container(height=56, alignment=ft.alignment.center, content=ft.Icon("diamond", size=ICON_SIZE, color=TOKENS["colors"]["component"]["sidebar"]["icon"]["default"]), padding=ft.padding.only(top=8, bottom=8))
     menu_icon = ft.Icon("menu", size=ICON_SIZE, rotate=ft.Rotate(0, alignment=ft.alignment.center), animate_rotation=ANIM)
     header_btn = ft.Container(
         content=ft.Row(
@@ -1219,7 +1352,7 @@ def main(page: ft.Page):
         spacing=8, expand=True, scroll=ft.ScrollMode.AUTO,
     )
 
-    theme_icon = ft.Icon("dark_mode", size=ICON_SIZE, color=ft.Colors.GREY_600)
+    theme_icon = ft.Icon("dark_mode", size=ICON_SIZE, color=TOKENS["colors"]["component"]["sidebar"]["theme_icon"]["default"])
     theme_text = ft.Text("Modo Escuro", size=13, weight=ft.FontWeight.W_600, no_wrap=True, opacity=0)
     theme_text_box = ft.Container(
         alignment=ft.alignment.center_left, content=theme_text,
@@ -1231,7 +1364,7 @@ def main(page: ft.Page):
     )
 
     root = ft.Container(
-        width=W_COLLAPSED, bgcolor=ft.Colors.WHITE,
+        width=W_COLLAPSED, bgcolor=TOKENS["colors"]["component"]["sidebar"]["bg"]["light"],
         border_radius=ft.border_radius.only(top_right=RADIUS_ASIDE, bottom_right=RADIUS_ASIDE),
         padding=P_ROOT,
         content=ft.Column(
@@ -1239,7 +1372,7 @@ def main(page: ft.Page):
             expand=True, spacing=0,
         ),
         animate=ANIM,
-        shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=ft.Colors.with_opacity(0.15, ft.Colors.BLACK)),
+        shadow=ft.BoxShadow(blur_radius=18, spread_radius=1, color=TOKENS["colors"]["shadow"]["strong"]),
     )
 
     def init_state():
