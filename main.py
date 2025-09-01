@@ -10,7 +10,8 @@ import database as db
 # NOVA IMPORTAÇÕES PARA E-MAIL
 # ==============================
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -30,10 +31,10 @@ TOKENS = {
         "bg": {
             "app": {
                 "light": ft.Colors.GREY_100,      # Fundo global da aplicação (modo claro)
-                "dark": "#0f172a",              # Fundo global da aplicação (modo escuro) - slate-900
+                "dark": "#0f172a",               # Fundo global da aplicação (modo escuro) - slate-900
             },
             "surface": {
-                "light": ft.Colors.WHITE,       # Fundo de cards e superfícies (modo claro)
+                "light": ft.Colors.WHITE,        # Fundo de cards e superfícies (modo claro)
                 "dark": ft.Colors.with_opacity(0.5, "#1e293b"), # Fundo de cards e superfícies (modo escuro) - slate-800
                 "muted": ft.Colors.with_opacity(0.2, ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
             },
@@ -44,36 +45,45 @@ TOKENS = {
         "text": {
             "primary": {
                 "light": ft.Colors.GREY_900,      # Cor de texto principal (modo claro)
-                "dark": "#f1f5f9",              # Cor de texto principal (modo escuro) - slate-100
+                "dark": "#f1f5f9",               # Cor de texto principal (modo escuro) - slate-100
             },
             "muted": {
                 "light": ft.Colors.GREY_800,      # Cor de texto secundário/silenciado (modo claro)
-                "dark": "#cbd5e1",              # Cor de texto secundário/silenciado (modo escuro) - slate-300
+                "dark": "#cbd5e1",               # Cor de texto secundário/silenciado (modo escuro) - slate-300
             },
-            "inverse": ft.Colors.WHITE,           # Cor de texto sobre fundos coloridos/escuros
+            "inverse": ft.Colors.WHITE,             # Cor de texto sobre fundos coloridos/escuros
         },
         "border": {
             "default": {
                 "light": ft.Colors.GREY_300,      # Cor de borda padrão (modo claro)
-                "dark": "#334155",              # Cor de borda padrão (modo escuro) - slate-700
+                "dark": "#334155",               # Cor de borda padrão (modo escuro) - slate-700
             }
         },
         "divider": {
             "default": {
                 "light": ft.Colors.with_opacity(0.08, ft.Colors.BLACK), # Cor de divisores (modo claro)
-                "dark": "#334155",              # Cor de divisores (modo escuro) - slate-700
+                "dark": "#334155",               # Cor de divisores (modo escuro) - slate-700
             },
         },
         "brand": {
             "primary": {
-                "bg": "#4f46e5",                # Cor de fundo para botões de ação primária - indigo-600
+                "bg": "#4f46e5",              # Cor de fundo para botões de ação primária - indigo-600
+            },
+            # ================================================================= #
+            # ======================= MUDANÇA APLICADA AQUI =================== #
+            # ================================================================= #
+            "secondary": {
+                "bg": {
+                    "light": "#64748b",      # Cor para modo claro (ex: slate-500)
+                    "dark": "#5e7ea6"        # Cor que você pediu para o modo escuro
+                }
             }
         },
         "component": {
             "sidebar": {
                 "bg": {
-                    "light": ft.Colors.WHITE,       # Fundo da sidebar (modo claro)
-                    "dark": "#1e293b",              # Fundo da sidebar (modo escuro) - slate-800
+                    "light": ft.Colors.WHITE,        # Fundo da sidebar (modo claro)
+                    "dark": "#1e293b",               # Fundo da sidebar (modo escuro) - slate-800
                 },
                 "active": {
                     "bg": {
@@ -91,15 +101,15 @@ TOKENS = {
                 },
                 "icon": {
                     "logo": "#EDE9FE", # Cor do ícone do logo (diamond)
-                    "menu": {           # Cor do ícone do menu (hambúrguer)
+                    "menu": {            # Cor do ícone do menu (hambúrguer)
                         "light": ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
-                    "inactive": {       # Cor dos ícones de navegação inativos
+                    "inactive": {        # Cor dos ícones de navegação inativos
                         "light": ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
-                    "theme": {          # Cor do ícone de alternar tema
+                    "theme": {           # Cor do ícone de alternar tema
                         "light": ft.Colors.GREY_600,
                         "dark": "#EDE9FE"  # slate-400
                     }
@@ -111,7 +121,7 @@ TOKENS = {
                 "bg": ft.Colors.GREEN_700,      # Fundo para snackbar de sucesso
             },
             "error": {
-                "bg": ft.Colors.RED_700,        # Fundo para snackbar de erro
+                "bg": ft.Colors.RED_700,         # Fundo para snackbar de erro
                 "bg_strong": ft.Colors.RED,       # Fundo para botões de exclusão
                 "icon": ft.Colors.RED_400,      # Ícone de exclusão
             },
@@ -158,7 +168,7 @@ TOKENS = {
 # ==============================
 # CONFIGURAÇÃO INICIAL DO TEMA
 # ==============================
-initial_theme = "dark"              
+initial_theme = "dark"          
 
 
 # ==============================
@@ -342,49 +352,137 @@ def enviar_email_ata(ata: dict, destinatario: str):
     # --- Monta o corpo do e-mail ---
     assunto = f"Informações da Ata de Registro de Preços Nº {ata.get('numero', 'N/A')}"
     
+    # Início do HTML do e-mail, formatado com classes Tailwind
     corpo_html = f"""
-    <html>
-    <body>
-        <h2>Resumo da Ata Nº {ata.get('numero', 'N/A')}</h2>
-        <p><strong>Objeto:</strong> {ata.get('objeto', 'N/A')}</p>
-        <p><strong>Fornecedor:</strong> {ata.get('fornecedor', 'N/A')}</p>
-        <p><strong>Vigência:</strong> {ata.get('vigencia', 'N/A')}</p>
-        <p><strong>Documento SEI:</strong> {ata.get('documentoSei', 'N/A')}</p>
-        <p><strong>Valor Total:</strong> {ata.get('valorTotal', 'N/A')}</p>
-        <hr>
-        <h3>Itens da Ata:</h3>
-        <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
-            <thead>
-                <tr>
-                    <th>Descrição</th>
-                    <th>Quantidade</th>
-                    <th>Valor Unitário</th>
-                    <th>Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumo da Ata de Registro de Preços</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body style="font-family: 'Inter', sans-serif; background-color: #f3f4f6; margin: 0; padding: 24px;">
+
+    <!-- Tabela principal para centralizar o conteúdo -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="width: 100%; max-width: 640px; border-collapse: separate; border-spacing: 0; border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); overflow: hidden; background-color: #ffffff; border: 1px solid #e5e7eb;">
+        <tr>
+            <td style="padding: 0;">
+                <!-- Cabeçalho com cor sólida -->
+                <div style="background-color: #0f82d2; color: #ffffff; padding: 48px; text-align: center; border-radius: 24px 24px 0 0;">
+                    <h1 style="font-size: 32px; font-weight: 800; margin-bottom: 8px;">Ata de Registro de Preços N° {ata.get('numero', 'N/A')}</h1>
+                    <p style="font-size: 16px; font-weight: 500; opacity: 0.9;">Este é um resumo detalhado das informações principais da ata, incluindo itens e valores.</p>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 40px;">
+                <!-- Tabela para os detalhes principais (substitui o grid) -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                    <tr>
+                        <!-- Objeto -->
+                        <td valign="top" style="padding-bottom: 24px; padding-right: 24px; width: 50%;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse: separate; border-spacing: 0;">
+                                <tr>
+                                    <td style="padding-bottom: 8px; font-weight: 600; color: #6b7280; font-size: 14px;">Objeto:</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 18px; font-weight: 700; color: #111827;">{ata.get('objeto', 'N/A')}</td>
+                                </tr>
+                            </table>
+                        </td>
+                        <!-- Fornecedor -->
+                        <td valign="top" style="padding-bottom: 24px; padding-left: 24px; width: 50%;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse: separate; border-spacing: 0;">
+                                <tr>
+                                    <td style="padding-bottom: 8px; font-weight: 600; color: #6b7280; font-size: 14px;">Fornecedor:</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 18px; font-weight: 700; color: #111827;">{ata.get('fornecedor', 'N/A')}</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <!-- Vigência -->
+                        <td valign="top" style="padding-bottom: 24px; padding-right: 24px; width: 50%;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse: separate; border-spacing: 0;">
+                                <tr>
+                                    <td style="padding-bottom: 8px; font-weight: 600; color: #6b7280; font-size: 14px;">Vigência até:</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 18px; font-weight: 700; color: #111827;">{ata.get('vigencia', 'N/A')}</td>
+                                </tr>
+                            </table>
+                        </td>
+                        <!-- Documento SEI -->
+                        <td valign="top" style="padding-bottom: 24px; padding-left: 24px; width: 50%;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse: separate; border-spacing: 0;">
+                                <tr>
+                                    <td style="padding-bottom: 8px; font-weight: 600; color: #6b7280; font-size: 14px;">Documento SEI:</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 18px; font-weight: 700; color: #111827;">{ata.get('documentoSei', 'N/A')}</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Seção de Valor Total -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 40px; margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 32px;">
+                    <tr>
+                        <td style="font-weight: 600; color: #6b7280; font-size: 14px;">Valor Total:</td>
+                        <td align="right" style="font-size: 48px; font-weight: 800; color: #16a34a;">{ata.get('valorTotal', 'N/A')}</td>
+                    </tr>
+                </table>
+
+                <!-- Tabela de Itens da Ata -->
+                <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px; color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">Itens da Ata</h2>
+                
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%; border-collapse: collapse; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden;">
+                    <thead>
+                        <tr style="background-color: #f9fafb;">
+                            <th scope="col" style="padding: 16px 24px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Descrição</th>
+                            <th scope="col" style="padding: 16px 24px; text-align: center; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Quantidade</th>
+                            <th scope="col" style="padding: 16px 24px; text-align: center; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Valor Unitário</th>
+                            <th scope="col" style="padding: 16px 24px; text-align: center; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     """
+    
     if ata.get("itens"):
         for item in ata["itens"]:
             corpo_html += f"""
-                <tr>
-                    <td>{item.get('descricao', '')}</td>
-                    <td>{item.get('quantidade', '')}</td>
-                    <td>{item.get('valorUnitario', '')}</td>
-                    <td>{item.get('subtotal', '')}</td>
-                </tr>
-            """
+                        <tr style="background-color: #ffffff; border-top: 1px solid #e5e7eb;">
+                            <td style="padding: 16px 24px; white-space: nowrap; font-size: 14px; color: #1f2937; font-weight: 500;">{item.get('descricao', '')}</td>
+                            <td style="padding: 16px 24px; white-space: nowrap; text-align: center; font-size: 14px; color: #1f2937;">{item.get('quantidade', '')}</td>
+                            <td style="padding: 16px 24px; white-space: nowrap; text-align: center; font-size: 14px; color: #1f2937;">{item.get('valorUnitario', '')}</td>
+                            <td style="padding: 16px 24px; white-space: nowrap; text-align: center; font-size: 14px; color: #1f2937;">{item.get('subtotal', '')}</td>
+                        </tr>
+        """
     else:
-        corpo_html += "<tr><td colspan='4'>Nenhum item cadastrado.</td></tr>"
+        corpo_html += """
+                        <tr style="background-color: #ffffff; border-top: 1px solid #e5e7eb;">
+                            <td colspan="4" style="padding: 16px 24px; white-space: nowrap; text-align: center; font-size: 14px; color: #1f2937;">Nenhum item cadastrado.</td>
+                        </tr>
+        """
 
-    corpo_html += """
-            </tbody>
-        </table>
-        <br>
-        <p><em>E-mail enviado automaticamente pelo sistema de gestão de ATAs.</em></p>
-    </body>
-    </html>
-    """
+    corpo_html += f"""
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 40px; text-align: center; color: #9ca3af; font-size: 12px;">
+                    <p>E-mail enviado automaticamente pelo sistema de gestão de ATAs. Esta é uma versão de visualização simplificada.</p>
+                </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
 
     # --- Configuração do e-mail ---
     msg = MIMEMultipart()
@@ -922,9 +1020,9 @@ def main(page: ft.Page):
                 rows_ui.append(
                     ft.DataRow(
                         cells=[
-                            ft.DataCell(ft.Container(ft.Text(ata.get("numero",""),   color=get_theme_color("text.primary")), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
+                            ft.DataCell(ft.Container(ft.Text(ata.get("numero",""),    color=get_theme_color("text.primary")), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
                             ft.DataCell(ft.Container(ft.Text(ata.get("vigencia",""), color=get_theme_color("text.muted")), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
-                            ft.DataCell(ft.Container(ft.Text(ata.get("objeto",""),     color=get_theme_color("text.muted")), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
+                            ft.DataCell(ft.Container(ft.Text(ata.get("objeto",""),      color=get_theme_color("text.muted")), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
                             ft.DataCell(ft.Container(ft.Text(ata.get("fornecedor",""), color=get_theme_color("text.muted")), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
                             ft.DataCell(
                                 ft.Container(
@@ -945,10 +1043,10 @@ def main(page: ft.Page):
                                         alignment=ft.MainAxisAlignment.CENTER,
                                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                         controls=[
-                                            action_icon("visibility", "Ver",    lambda e, a=ata: show_ata_details(a)),
+                                            action_icon("visibility", "Ver",     lambda e, a=ata: show_ata_details(a)),
                                             action_icon("edit",       "Editar", lambda e, a=ata: show_ata_edit(a)),
-                                            action_icon("delete",     "Excluir", lambda e, a=ata: show_confirm_delete_modal(a),
-                                                        color=get_theme_color("semantic.error.icon")),
+                                            action_icon("delete",      "Excluir", lambda e, a=ata: show_confirm_delete_modal(a),
+                                                                 color=get_theme_color("semantic.error.icon")),
                                         ],
                                     ),
                                 )
@@ -969,12 +1067,12 @@ def main(page: ft.Page):
             border_radius=8,
             clip_behavior=ft.ClipBehavior.HARD_EDGE,
             columns=[
-                ft.DataColumn(ft.Text("NÚMERO",   size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
+                ft.DataColumn(ft.Text("NÚMERO",    size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
                 ft.DataColumn(ft.Text("VIGÊNCIA", size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
-                ft.DataColumn(ft.Text("OBJETO",     size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
+                ft.DataColumn(ft.Text("OBJETO",      size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
                 ft.DataColumn(ft.Text("FORNECEDOR", size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
-                ft.DataColumn(ft.Text("SITUAÇÃO",   size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
-                ft.DataColumn(ft.Text("AÇÕES",      size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
+                ft.DataColumn(ft.Text("SITUAÇÃO",    size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
+                ft.DataColumn(ft.Text("AÇÕES",       size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
             ],
             rows=rows_ui,
         )
@@ -1030,8 +1128,8 @@ def main(page: ft.Page):
 
             filter_map = {
                 'vigente':  {'title': 'Atas Vigentes', 'icon': 'check_circle', 'data': ATAS['vigentes'], 'variant': 'green'},
-                'vencida':  {'title': 'Atas Vencidas', 'icon': 'cancel',       'data': ATAS['vencidas'], 'variant': 'red'},
-                'a_vencer': {'title': 'Atas a Vencer', 'icon': 'schedule',     'data': ATAS['aVencer'],  'variant': 'amber'},
+                'vencida':  {'title': 'Atas Vencidas', 'icon': 'cancel',        'data': ATAS['vencidas'], 'variant': 'red'},
+                'a_vencer': {'title': 'Atas a Vencer', 'icon': 'schedule',      'data': ATAS['aVencer'],  'variant': 'amber'},
             }
 
             for key in FILTER_KEYS:
@@ -1322,7 +1420,19 @@ def main(page: ft.Page):
                     controls=[
                         pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: (set_content(AtasPage()), page.update())),
                         pill_button("Editar", icon="edit", variant="filled", on_click=lambda e, ata_=ata: show_ata_edit(ata_)),
-                        pill_button("Enviar E-mail", icon="email", variant="filled", on_click=show_email_dialog, style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE)),
+                        # ================================================================= #
+                        # ======================= MUDANÇA APLICADA AQUI =================== #
+                        # ================================================================= #
+                        pill_button(
+                            "Enviar E-mail", 
+                            icon="email", 
+                            variant="filled", 
+                            on_click=show_email_dialog, 
+                            style=ft.ButtonStyle(
+                                bgcolor=get_theme_color("brand.secondary.bg"), 
+                                color=get_theme_color("text.inverse")
+                            )
+                        ),
                     ],
                     spacing=8,
                 ),
@@ -1383,8 +1493,8 @@ def main(page: ft.Page):
                 ft.Container(
                     padding=ft.padding.only(top=12),
                     content=ft.Row(controls=[ft.Text("Valor Total", weight=ft.FontWeight.W_600, color=get_theme_color("text.muted")),
-                                            ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=get_theme_color("text.muted"))],
-                                      alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                                             ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=get_theme_color("text.muted"))],
+                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                 ),
             ], spacing=10),
         )
