@@ -26,48 +26,48 @@ load_dotenv()
 TOKENS = {
     "colors": {
         "base": {
-            "black": ft.Colors.BLACK, # Cor base para opacidades (sombras/divisores)
+            "black":  ft.Colors.BLACK, # Cor base para opacidades (sombras/divisores)
         },
         "bg": {
             "app": {
-                "light": ft.Colors.GREY_100,      # Fundo global da aplicação (modo claro)
-                "dark": "#0f172a",               # Fundo global da aplicação (modo escuro) - slate-900
+                "light":  ft.Colors.GREY_100,      # Fundo global da aplicação (modo claro)
+                "dark": "#0f172a",                 # Fundo global da aplicação (modo escuro) - slate-900
             },
             "surface": {
-                "light": ft.Colors.WHITE,        # Fundo de cards e superfícies (modo claro)
-                "dark": ft.Colors.with_opacity(0.5, "#1e293b"), # Fundo de cards e superfícies (modo escuro) - slate-800
-                "muted": ft.Colors.with_opacity(0.2, ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
+                "light":  ft.Colors.WHITE,          # Fundo de cards e superfícies (modo claro)
+                "dark":  ft.Colors.with_opacity(0.5, "#1e293b"), # Fundo de cards e superfícies (modo escuro) - slate-800
+                "muted":  ft.Colors.with_opacity(0.2,  ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
             },
             "input": {
-                "default": ft.Colors.with_opacity(0.04, ft.Colors.BLACK), # Fundo do campo de busca
+                "default":  ft.Colors.with_opacity(0.04,  ft.Colors.BLACK), # Fundo do campo de busca
             },
         },
         "text": {
             "primary": {
-                "light": ft.Colors.GREY_900,      # Cor de texto principal (modo claro)
-                "dark": "#f1f5f9",               # Cor de texto principal (modo escuro) - slate-100
+                "light":  ft.Colors.GREY_900,      # Cor de texto principal (modo claro)
+                "dark": "#f1f5f9",                 # Cor de texto principal (modo escuro) - slate-100
             },
             "muted": {
-                "light": ft.Colors.GREY_800,      # Cor de texto secundário/silenciado (modo claro)
-                "dark": "#cbd5e1",               # Cor de texto secundário/silenciado (modo escuro) - slate-300
+                "light":  ft.Colors.GREY_800,      # Cor de texto secundário/silenciado (modo claro)
+                "dark": "#cbd5e1",                 # Cor de texto secundário/silenciado (modo escuro) - slate-300
             },
-            "inverse": ft.Colors.WHITE,             # Cor de texto sobre fundos coloridos/escuros
+            "inverse":  ft.Colors.WHITE,            # Cor de texto sobre fundos coloridos/escuros
         },
         "border": {
             "default": {
-                "light": ft.Colors.GREY_300,      # Cor de borda padrão (modo claro)
-                "dark": "#334155",               # Cor de borda padrão (modo escuro) - slate-700
+                "light":  ft.Colors.GREY_300,      # Cor de borda padrão (modo claro)
+                "dark": "#334155",                 # Cor de borda padrão (modo escuro) - slate-700
             }
         },
         "divider": {
             "default": {
-                "light": ft.Colors.with_opacity(0.08, ft.Colors.BLACK), # Cor de divisores (modo claro)
-                "dark": "#334155",               # Cor de divisores (modo escuro) - slate-700
+                "light":  ft.Colors.with_opacity(0.08,  ft.Colors.BLACK), # Cor de divisores (modo claro)
+                "dark": "#334155",                 # Cor de divisores (modo escuro) - slate-700
             },
         },
         "brand": {
             "primary": {
-                "bg": "#4f46e5",              # Cor de fundo para botões de ação primária - indigo-600
+                "bg": "#4f46e5",                   # Cor de fundo para botões de ação primária - indigo-600
             },
             # ================================================================= #
             # ======================= MUDANÇA APLICADA AQUI =================== #
@@ -82,35 +82,35 @@ TOKENS = {
         "component": {
             "sidebar": {
                 "bg": {
-                    "light": ft.Colors.WHITE,        # Fundo da sidebar (modo claro)
-                    "dark": "#1e293b",               # Fundo da sidebar (modo escuro) - slate-800
+                    "light":  ft.Colors.WHITE,          # Fundo da sidebar (modo claro)
+                    "dark": "#1e293b",                 # Fundo da sidebar (modo escuro) - slate-800
                 },
                 "active": {
                     "bg": {
                         "light": "#EDE9FE",      # Fundo do item ativo da sidebar (modo claro)
-                        "dark": "#312e81",      # Fundo do item ativo da sidebar (modo escuro) - indigo-900
+                        "dark": "#312e81",       # Fundo do item ativo da sidebar (modo escuro) - indigo-900
                     },
                     "bar": {
                         "light": "#8B5CF6",      # Barra lateral do item ativo (modo claro)
-                        "dark": "#A78BFA",      # Barra lateral do item ativo (modo escuro)
+                        "dark": "#A78BFA",       # Barra lateral do item ativo (modo escuro)
                     },
                     "text": {
                         "light": "#6D28D9",      # Texto/ícone do item ativo (modo claro)
-                        "dark": ft.Colors.WHITE,  # Texto/ícone do item ativo (modo escuro)
+                        "dark":  ft.Colors.WHITE,   # Texto/ícone do item ativo (modo escuro)
                     },
                 },
                 "icon": {
                     "logo": "#EDE9FE", # Cor do ícone do logo (diamond)
                     "menu": {            # Cor do ícone do menu (hambúrguer)
-                        "light": ft.Colors.GREY_800,
+                        "light":  ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
                     "inactive": {        # Cor dos ícones de navegação inativos
-                        "light": ft.Colors.GREY_800,
+                        "light":  ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
                     "theme": {           # Cor do ícone de alternar tema
-                        "light": ft.Colors.GREY_600,
+                        "light":  ft.Colors.GREY_600,
                         "dark": "#EDE9FE"  # slate-400
                     }
                 },
@@ -118,33 +118,33 @@ TOKENS = {
         },
         "semantic": {
             "success": {
-                "bg": ft.Colors.GREEN_700,      # Fundo para snackbar de sucesso
+                "bg":  ft.Colors.GREEN_700,      # Fundo para snackbar de sucesso
             },
             "error": {
-                "bg": ft.Colors.RED_700,         # Fundo para snackbar de erro
-                "bg_strong": ft.Colors.RED,       # Fundo para botões de exclusão
-                "icon": ft.Colors.RED_400,      # Ícone de exclusão
+                "bg":  ft.Colors.RED_700,         # Fundo para snackbar de erro
+                "bg_strong":  ft.Colors.RED,        # Fundo para botões de exclusão
+                "icon":  ft.Colors.RED_400,      # Ícone de exclusão
             },
             "warning": {
                 "bg": {
-                    "light": ft.Colors.AMBER_100, # Fundo do card de aviso (modo claro)
-                    "dark": ft.Colors.AMBER_900,  # Fundo do card de aviso (modo escuro)
+                    "light":  ft.Colors.AMBER_100, # Fundo do card de aviso (modo claro)
+                    "dark":  ft.Colors.AMBER_900,  # Fundo do card de aviso (modo escuro)
                 },
-                "border": ft.Colors.AMBER,      # Borda e ícone do card de aviso
+                "border":  ft.Colors.AMBER,      # Borda e ícone do card de aviso
             },
         },
         "status": {
             "vigente": { # Verde
-                "bg": {"light": ft.Colors.GREEN_100, "dark": ft.Colors.with_opacity(0.1, "#4ade80")},
-                "text": {"light": ft.Colors.GREEN_800, "dark": "#86efac"}, # green-300
+                "bg": {"light":  ft.Colors.GREEN_100, "dark":  ft.Colors.with_opacity(0.1, "#4ade80")},
+                "text": {"light":  ft.Colors.GREEN_800, "dark": "#86efac"}, # green-300
             },
             "a_vencer": { # Âmbar
-                "bg": {"light": ft.Colors.AMBER_50, "dark": ft.Colors.with_opacity(0.1, "#facc15")},
-                "text": {"light": ft.Colors.AMBER_900, "dark": "#facc15"}, # yellow-400
+                "bg": {"light":  ft.Colors.AMBER_50, "dark":  ft.Colors.with_opacity(0.1, "#facc15")},
+                "text": {"light":  ft.Colors.AMBER_900, "dark": "#facc15"}, # yellow-400
             },
             "vencida": { # Vermelho
-                "bg": {"light": ft.Colors.RED_100, "dark": ft.Colors.with_opacity(0.1, "#f87171")},
-                "text": {"light": ft.Colors.RED_800, "dark": "#fca5a5"}, # red-300
+                "bg": {"light":  ft.Colors.RED_100, "dark":  ft.Colors.with_opacity(0.1, "#f87171")},
+                "text": {"light":  ft.Colors.RED_800, "dark": "#fca5a5"}, # red-300
             },
         },
         "chart": {
@@ -157,10 +157,10 @@ TOKENS = {
             },
         },
         "shadow": {
-            "strong": ft.Colors.with_opacity(0.15, ft.Colors.BLACK),
-            "default": ft.Colors.with_opacity(0.12, ft.Colors.BLACK),
-            "soft": ft.Colors.with_opacity(0.10, ft.Colors.BLACK),
-            "faint": ft.Colors.with_opacity(0.08, ft.Colors.BLACK),
+            "strong":  ft.Colors.with_opacity(0.15,  ft.Colors.BLACK),
+            "default":  ft.Colors.with_opacity(0.12,  ft.Colors.BLACK),
+            "soft":  ft.Colors.with_opacity(0.10,  ft.Colors.BLACK),
+            "faint":  ft.Colors.with_opacity(0.08,  ft.Colors.BLACK),
         },
     }
 }
@@ -168,7 +168,7 @@ TOKENS = {
 # ==============================
 # CONFIGURAÇÃO INICIAL DO TEMA
 # ==============================
-initial_theme = "dark"          
+initial_theme = "dark"            
 
 
 # ==============================
@@ -366,7 +366,7 @@ def enviar_email_ata(ata: dict, destinatario: str):
 <body style="font-family: 'Inter', sans-serif; background-color: #f3f4f6; margin: 0; padding: 24px;">
 
     <!-- Tabela principal para centralizar o conteúdo -->
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="width: 100%; max-width: 640px; border-collapse: separate; border-spacing: 0; border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); overflow: hidden; background-color: #ffffff; border: 1px solid #e5e7eb;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="width: 100%; max-width: 1280px; border-collapse: separate; border-spacing: 0; border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); overflow: hidden; background-color: #ffffff; border: 1px solid #e5e7eb;">
         <tr>
             <td style="padding: 0;">
                 <!-- Cabeçalho com cor sólida -->
@@ -462,13 +462,13 @@ def enviar_email_ata(ata: dict, destinatario: str):
                             <td style="padding: 16px 24px; white-space: nowrap; text-align: center; font-size: 14px; color: #1f2937;">{item.get('valorUnitario', '')}</td>
                             <td style="padding: 16px 24px; white-space: nowrap; text-align: center; font-size: 14px; color: #1f2937;">{item.get('subtotal', '')}</td>
                         </tr>
-        """
+    """
     else:
         corpo_html += """
                         <tr style="background-color: #ffffff; border-top: 1px solid #e5e7eb;">
                             <td colspan="4" style="padding: 16px 24px; white-space: nowrap; text-align: center; font-size: 14px; color: #1f2937;">Nenhum item cadastrado.</td>
                         </tr>
-        """
+    """
 
     corpo_html += f"""
                     </tbody>
@@ -533,10 +533,10 @@ def main(page: ft.Page):
             return color_group
         except (KeyError, TypeError):
             print(f"AVISO: Token de cor não encontrado ou inválido: '{token_path}'")
-            return ft.Colors.PINK
+            return  ft.Colors.PINK
         except Exception as e:
             print(f"ERRO ao buscar token '{token_path}': {e}")
-            return ft.Colors.PINK
+            return  ft.Colors.PINK
 
     page.title = "Painel - Dashboard + Atas (Flet)"
     page.padding = 0
@@ -1043,10 +1043,10 @@ def main(page: ft.Page):
                                         alignment=ft.MainAxisAlignment.CENTER,
                                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                         controls=[
-                                            action_icon("visibility", "Ver",     lambda e, a=ata: show_ata_details(a)),
-                                            action_icon("edit",       "Editar", lambda e, a=ata: show_ata_edit(a)),
-                                            action_icon("delete",      "Excluir", lambda e, a=ata: show_confirm_delete_modal(a),
-                                                                 color=get_theme_color("semantic.error.icon")),
+                                            action_icon("visibility", "Ver",      lambda e, a=ata: show_ata_details(a)),
+                                            action_icon("edit",         "Editar", lambda e, a=ata: show_ata_edit(a)),
+                                            action_icon("delete",       "Excluir", lambda e, a=ata: show_confirm_delete_modal(a),
+                                                                        color=get_theme_color("semantic.error.icon")),
                                         ],
                                     ),
                                 )
@@ -1067,12 +1067,12 @@ def main(page: ft.Page):
             border_radius=8,
             clip_behavior=ft.ClipBehavior.HARD_EDGE,
             columns=[
-                ft.DataColumn(ft.Text("NÚMERO",    size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
+                ft.DataColumn(ft.Text("NÚMERO",     size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
                 ft.DataColumn(ft.Text("VIGÊNCIA", size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
-                ft.DataColumn(ft.Text("OBJETO",      size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
+                ft.DataColumn(ft.Text("OBJETO",       size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
                 ft.DataColumn(ft.Text("FORNECEDOR", size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
-                ft.DataColumn(ft.Text("SITUAÇÃO",    size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
-                ft.DataColumn(ft.Text("AÇÕES",       size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
+                ft.DataColumn(ft.Text("SITUAÇÃO",     size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
+                ft.DataColumn(ft.Text("AÇÕES",        size=11, color=get_theme_color("text.muted"), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER),
             ],
             rows=rows_ui,
         )
@@ -1111,7 +1111,7 @@ def main(page: ft.Page):
         input_padding = ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"])
         search = tf(
             hint_text="Buscar atas...",
-            prefix_icon=ft.Icons.SEARCH,
+            prefix_icon= ft.Icons.SEARCH,
             border_radius=BORDER_RADIUS_PILL,
             content_padding=input_padding,
             bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
@@ -1128,8 +1128,8 @@ def main(page: ft.Page):
 
             filter_map = {
                 'vigente':  {'title': 'Atas Vigentes', 'icon': 'check_circle', 'data': ATAS['vigentes'], 'variant': 'green'},
-                'vencida':  {'title': 'Atas Vencidas', 'icon': 'cancel',        'data': ATAS['vencidas'], 'variant': 'red'},
-                'a_vencer': {'title': 'Atas a Vencer', 'icon': 'schedule',      'data': ATAS['aVencer'],  'variant': 'amber'},
+                'vencida':  {'title': 'Atas Vencidas', 'icon': 'cancel',         'data': ATAS['vencidas'], 'variant': 'red'},
+                'a_vencer': {'title': 'Atas a Vencer', 'icon': 'schedule',       'data': ATAS['aVencer'],  'variant': 'amber'},
             }
 
             for key in FILTER_KEYS:
@@ -1161,7 +1161,7 @@ def main(page: ft.Page):
         )
 
         def _checked_icon(flag: bool):
-            return ft.Icons.CHECK_BOX if flag else ft.Icons.CHECK_BOX_OUTLINE_BLANK
+            return  ft.Icons.CHECK_BOX if flag else  ft.Icons.CHECK_BOX_OUTLINE_BLANK
 
         vig_icon_ref: ft.Ref[ft.Icon] = ft.Ref[ft.Icon]()
         ven_icon_ref: ft.Ref[ft.Icon] = ft.Ref[ft.Icon]()
@@ -1255,7 +1255,7 @@ def main(page: ft.Page):
             content=ft.Container(width=MENU_W, height=1, bgcolor=get_theme_color("divider.default")),
             style=ft.ButtonStyle(
                 padding=ft.padding.symmetric(vertical=6, horizontal=PILL["md"]["px"]),
-                overlay_color=ft.Colors.TRANSPARENT,
+                overlay_color= ft.Colors.TRANSPARENT,
                 shape=ft.RoundedRectangleBorder(radius=0),
             ),
             on_click=lambda e: None,
@@ -1278,7 +1278,7 @@ def main(page: ft.Page):
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         spacing=8,
                         controls=[
-                            ft.Icon(ft.Icons.DONE, size=18, color=get_theme_color("text.inverse")),
+                            ft.Icon( ft.Icons.DONE, size=18, color=get_theme_color("text.inverse")),
                             ft.Text("Aplicar", size=13, weight=ft.FontWeight.W_600, color=get_theme_color("text.inverse")),
                         ],
                     ),
@@ -1303,7 +1303,7 @@ def main(page: ft.Page):
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         spacing=8,
                         controls=[
-                            ft.Icon(ft.Icons.CLEAR_ALL, size=18, color=get_theme_color("text.muted")),
+                            ft.Icon( ft.Icons.CLEAR_ALL, size=18, color=get_theme_color("text.muted")),
                             ft.Text("Limpar", size=13, weight=ft.FontWeight.W_600, color=get_theme_color("text.muted")),
                         ],
                     ),
@@ -1326,7 +1326,7 @@ def main(page: ft.Page):
                     shape=ft.RoundedRectangleBorder(radius=999),
                     overlay_color=TOKENS["colors"]["shadow"]["faint"],
                 ),
-                content=ft.Icon(ft.Icons.FILTER_LIST, size=20, color=get_theme_color("text.primary")),
+                content=ft.Icon( ft.Icons.FILTER_LIST, size=20, color=get_theme_color("text.primary")),
                 controls=[mi_vigente, mi_vencida, mi_a_vencer, mi_divider, mi_apply, mi_clear],
             ),
         )
@@ -1435,6 +1435,7 @@ def main(page: ft.Page):
                         ),
                     ],
                     spacing=8,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -1532,10 +1533,10 @@ def main(page: ft.Page):
             e.control.update()
 
         tels_data = ata.get("contatos", {}).get("telefone", [""])
-        tels_controls = [tf(label=f"Telefone {i+1}", value=v, prefix_icon=ft.Icons.PHONE, on_change=on_tel_change, hint_text="(XX) XXXXX-XXXX") for i, v in enumerate(tels_data)]
+        tels_controls = [tf(label=f"Telefone {i+1}", value=v, prefix_icon= ft.Icons.PHONE, on_change=on_tel_change, hint_text="(XX) XXXXX-XXXX") for i, v in enumerate(tels_data)]
         
         emails_data = ata.get("contatos", {}).get("email", [""])
-        emails_controls = [tf(label=f"E-mail {i+1}", value=v, prefix_icon=ft.Icons.MAIL, hint_text="exemplo@email.com") for i, v in enumerate(emails_data)]
+        emails_controls = [tf(label=f"E-mail {i+1}", value=v, prefix_icon= ft.Icons.MAIL, hint_text="exemplo@email.com") for i, v in enumerate(emails_data)]
 
         itens_data = ata.get("itens", [])[:] if ata.get("itens") else [{"descricao": "", "quantidade": "", "valorUnitario": ""}]
         itens_fields_controls = []
@@ -1638,10 +1639,10 @@ def main(page: ft.Page):
             itens_fields_controls.append(build_item_row(i, it))
 
         def add_tel(e):
-            tels_controls.append(tf(label=f"Telefone {len(tels_controls)+1}", value="", prefix_icon=ft.Icons.PHONE, on_change=on_tel_change, hint_text="(XX) XXXXX-XXXX")); refresh_ui()
+            tels_controls.append(tf(label=f"Telefone {len(tels_controls)+1}", value="", prefix_icon= ft.Icons.PHONE, on_change=on_tel_change, hint_text="(XX) XXXXX-XXXX")); refresh_ui()
 
         def add_email(e):
-            emails_controls.append(tf(label=f"E-mail {len(emails_controls)+1}", value="", prefix_icon=ft.Icons.MAIL, hint_text="exemplo@email.com")); refresh_ui()
+            emails_controls.append(tf(label=f"E-mail {len(emails_controls)+1}", value="", prefix_icon= ft.Icons.MAIL, hint_text="exemplo@email.com")); refresh_ui()
         
         def add_item(e):
             itens_fields_controls.append(build_item_row(len(itens_fields_controls), {})); refresh_ui()
