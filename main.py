@@ -1034,12 +1034,6 @@ def main(page: ft.Page):
             on_click=_on_filter_clear,
         )
 
-        mi_close = ft.MenuItemButton(
-            close_on_click=True,  # fecha sem aplicar
-            leading=ft.Icon(ft.Icons.CLOSE, size=18),
-            content=ft.Text("Fechar"),
-        )
-
         # Botão circular 40×40 com SubmenuButton centralizado
         filter_btn = ft.Container(
             ref=filter_btn_ref,
@@ -1057,7 +1051,7 @@ def main(page: ft.Page):
                     shape=ft.RoundedRectangleBorder(radius=999),
                 ),
                 content=ft.Icon(ft.Icons.FILTER_LIST, size=20, color=text_color()),
-                controls=[mi_vigente, mi_vencida, mi_a_vencer, mi_apply, mi_clear, mi_close],
+                controls=[mi_vigente, mi_vencida, mi_a_vencer, mi_apply, mi_clear],
             ),
         )
 
