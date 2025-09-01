@@ -7,6 +7,18 @@ import sqlite3
 import database as db
 
 # ==============================
+# NOVA IMPORTAÇÕES PARA E-MAIL
+# ==============================
+import os
+from dotenv import load_dotenv
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+# ==============================
 # DESIGN TOKENS
 # ==============================
 
@@ -60,8 +72,8 @@ TOKENS = {
         "component": {
             "sidebar": {
                 "bg": {
-                    "light": ft.Colors.WHITE,     # Fundo da sidebar (modo claro)
-                    "dark": "#1e293b",          # Fundo da sidebar (modo escuro) - slate-800
+                    "light": ft.Colors.WHITE,       # Fundo da sidebar (modo claro)
+                    "dark": "#1e293b",              # Fundo da sidebar (modo escuro) - slate-800
                 },
                 "active": {
                     "bg": {
@@ -79,15 +91,15 @@ TOKENS = {
                 },
                 "icon": {
                     "logo": "#EDE9FE", # Cor do ícone do logo (diamond)
-                    "menu": {          # Cor do ícone do menu (hambúrguer)
+                    "menu": {           # Cor do ícone do menu (hambúrguer)
                         "light": ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
-                    "inactive": {      # Cor dos ícones de navegação inativos
+                    "inactive": {       # Cor dos ícones de navegação inativos
                         "light": ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
-                    "theme": {         # Cor do ícone de alternar tema
+                    "theme": {          # Cor do ícone de alternar tema
                         "light": ft.Colors.GREY_600,
                         "dark": "#EDE9FE"  # slate-400
                     }
@@ -100,7 +112,7 @@ TOKENS = {
             },
             "error": {
                 "bg": ft.Colors.RED_700,        # Fundo para snackbar de erro
-                "bg_strong": ft.Colors.RED,     # Fundo para botões de exclusão
+                "bg_strong": ft.Colors.RED,       # Fundo para botões de exclusão
                 "icon": ft.Colors.RED_400,      # Ícone de exclusão
             },
             "warning": {
@@ -146,8 +158,7 @@ TOKENS = {
 # ==============================
 # CONFIGURAÇÃO INICIAL DO TEMA
 # ==============================
-# 1. O tema inicial seja definido no código.
-initial_theme = "dark"                          
+initial_theme = "dark"              
 
 
 # ==============================
@@ -314,21 +325,102 @@ class Validators:
             return None
         return None
 
+# ==============================
+# NOVA SEÇÃO: ENVIO DE E-MAIL
+# ==============================
+def enviar_email_ata(ata: dict, destinatario: str):
+    """
+    Envia um e-mail com os detalhes de uma ATA usando uma conta Outlook.
+    """
+    remetente_email = os.getenv("EMAIL_SENDER")
+    remetente_senha = os.getenv("EMAIL_PASSWORD") # Senha de aplicativo
+
+    if not remetente_email or not remetente_senha:
+        print("ERRO: Credenciais de e-mail não configuradas no arquivo .env")
+        return False, "Credenciais de e-mail não configuradas."
+
+    # --- Monta o corpo do e-mail ---
+    assunto = f"Informações da Ata de Registro de Preços Nº {ata.get('numero', 'N/A')}"
+    
+    corpo_html = f"""
+    <html>
+    <body>
+        <h2>Resumo da Ata Nº {ata.get('numero', 'N/A')}</h2>
+        <p><strong>Objeto:</strong> {ata.get('objeto', 'N/A')}</p>
+        <p><strong>Fornecedor:</strong> {ata.get('fornecedor', 'N/A')}</p>
+        <p><strong>Vigência:</strong> {ata.get('vigencia', 'N/A')}</p>
+        <p><strong>Documento SEI:</strong> {ata.get('documentoSei', 'N/A')}</p>
+        <p><strong>Valor Total:</strong> {ata.get('valorTotal', 'N/A')}</p>
+        <hr>
+        <h3>Itens da Ata:</h3>
+        <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Descrição</th>
+                    <th>Quantidade</th>
+                    <th>Valor Unitário</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+    if ata.get("itens"):
+        for item in ata["itens"]:
+            corpo_html += f"""
+                <tr>
+                    <td>{item.get('descricao', '')}</td>
+                    <td>{item.get('quantidade', '')}</td>
+                    <td>{item.get('valorUnitario', '')}</td>
+                    <td>{item.get('subtotal', '')}</td>
+                </tr>
+            """
+    else:
+        corpo_html += "<tr><td colspan='4'>Nenhum item cadastrado.</td></tr>"
+
+    corpo_html += """
+            </tbody>
+        </table>
+        <br>
+        <p><em>E-mail enviado automaticamente pelo sistema de gestão de ATAs.</em></p>
+    </body>
+    </html>
+    """
+
+    # --- Configuração do e-mail ---
+    msg = MIMEMultipart()
+    msg['From'] = remetente_email
+    msg['To'] = destinatario
+    msg['Subject'] = assunto
+    msg.attach(MIMEText(corpo_html, 'html'))
+
+    # --- Conexão e envio ---
+    try:
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(remetente_email, remetente_senha)
+        texto = msg.as_string()
+        server.sendmail(remetente_email, destinatario, texto)
+        server.quit()
+        print(f"E-mail para {destinatario} enviado com sucesso!")
+        return True, "E-mail enviado com sucesso!"
+    except smtplib.SMTPAuthenticationError:
+        print("Erro de autenticação. Verifique seu e-mail e senha de aplicativo.")
+        return False, "Erro de autenticação. Verifique suas credenciais."
+    except Exception as e:
+        print(f"Falha ao enviar e-mail: {e}")
+        return False, f"Falha ao enviar e-mail: {e}"
 
 # ==============================
 # APP
 # ==============================
 def main(page: ft.Page):
     
-    # 4. O tema ativo seja armazenado em uma variável global ou no objeto page.session.
     if page.session.get("active_theme") is None:
         page.session.set("active_theme", initial_theme)
 
-    # 5. Crie uma função utilitária `get_theme_color(token_path: str)`.
     def get_theme_color(token_path: str) -> str:
         """
         Busca uma cor no dicionário de TOKENS com base no tema ativo na sessão.
-        Exemplo: get_theme_color("bg.app") -> retorna TOKENS["colors"]["bg"]["app"]["light"]
         """
         try:
             current_theme = page.session.get("active_theme")
@@ -343,25 +435,22 @@ def main(page: ft.Page):
             return color_group
         except (KeyError, TypeError):
             print(f"AVISO: Token de cor não encontrado ou inválido: '{token_path}'")
-            return ft.Colors.PINK # Retorna uma cor de erro visível
+            return ft.Colors.PINK
         except Exception as e:
             print(f"ERRO ao buscar token '{token_path}': {e}")
             return ft.Colors.PINK
 
-    # 6. Ajuste a inicialização do Page para aplicar imediatamente o tema definido.
     page.title = "Painel - Dashboard + Atas (Flet)"
     page.padding = 0
     page.theme_mode = ft.ThemeMode.DARK if page.session.get("active_theme") == "dark" else ft.ThemeMode.LIGHT
     page.bgcolor = get_theme_color("bg.app")
 
-    # Estado da UI que não está relacionado ao tema
     state = {
         "collapsed": True,
         "active": "dashboard",
         "filters": {key: False for key in FILTER_KEYS},
     }
 
-    # --- REFs menu ---
     root = ft.Container()
     title_box = ft.Container()
     title_text = ft.Text()
@@ -372,15 +461,12 @@ def main(page: ft.Page):
     theme_text = ft.Text()
     items: dict[str, dict] = {}
 
-    # Conteúdo principal
     content_col = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO)
     content = ft.Container(expand=True, padding=20, content=content_col)
 
-    # ---- Helpers de estado ----
     def is_collapsed(): return state["collapsed"]
     def get_active_theme(): return page.session.get("active_theme")
 
-    # ---- Factory simples para TextField com estilo padronizado ----
     def tf(**kwargs):
         return ft.TextField(
             border_color=get_theme_color("border.default"),
@@ -388,7 +474,6 @@ def main(page: ft.Page):
             **kwargs
         )
 
-    # ---------- Factory de botões PÍLULA (tema-aware) ----------
     def pill_button(
         text: str,
         icon: str | None = None,
@@ -420,12 +505,9 @@ def main(page: ft.Page):
             return ft.ElevatedButton(**common)
         return ft.FilledButton(**common)
 
-    # ---------------- helpers gerais ----------------
     def set_content(view):
         content_col.controls = [view]
-        # Não chama page.update() aqui para evitar atualizações duplicadas
         
-    # ---------------- MENU (com barrinha integrada) ----------------
     def update_item_visual(key: str):
         ref = items[key]
         active = state["active"] == key
@@ -488,7 +570,6 @@ def main(page: ft.Page):
         page.update()
 
     def toggle_theme(_=None):
-        # 2. A lógica permite alternar entre tema claro e escuro em tempo de execução.
         current_theme = get_active_theme()
         new_theme = "dark" if current_theme == "light" else "light"
         page.session.set("active_theme", new_theme)
@@ -528,7 +609,7 @@ def main(page: ft.Page):
         bar = ft.Container(
             width=BAR_W,
             opacity=0,
-            bgcolor=get_theme_color("component.sidebar.active.bar"), # Cor inicial
+            bgcolor=get_theme_color("component.sidebar.active.bar"),
             border_radius=ft.border_radius.only(top_left=R_ITEM, bottom_left=R_ITEM),
         )
 
@@ -551,7 +632,6 @@ def main(page: ft.Page):
         update_item_visual(key)
         return wrapper
 
-    # ---------------- THEME / Colors UPDATE ----------------
     def update_theme_colors():
         root.bgcolor = get_theme_color("component.sidebar.bg")
         divider_top.bgcolor = get_theme_color("divider.default")
@@ -563,7 +643,6 @@ def main(page: ft.Page):
         for k in items:
             update_item_visual(k)
             
-        # Atualiza a view atual para refletir as mudanças de cor, recriando-a
         active_view_key = state["active"]
         if active_view_key == "dashboard":
             set_content(DashboardView())
@@ -574,7 +653,6 @@ def main(page: ft.Page):
         elif active_view_key == "config":
             set_content(SimplePage("Configurações", "Gerencie as configurações do sistema."))
         else:
-            # Caso genérico, força uma atualização da página
             page.update()
 
     # ==============================
@@ -727,7 +805,6 @@ def main(page: ft.Page):
         if variant == "green": variant_key = "vigente"
         elif variant == "amber": variant_key = "a_vencer"
         
-        # 3. Todas as cores e estilos dependam de tokens.
         bg_final = get_theme_color(f"status.{variant_key}.bg")
         fg_final = get_theme_color(f"status.{variant_key}.text")
 
@@ -978,7 +1055,6 @@ def main(page: ft.Page):
                 btn.tooltip = _filter_label()
                 btn.update()
 
-        # --------- PILL MENU (alinhado à esquerda) ----------
         MENU_W = 184
         item_style = ft.ButtonStyle(
             padding=ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"]),
@@ -989,7 +1065,6 @@ def main(page: ft.Page):
         def _checked_icon(flag: bool):
             return ft.Icons.CHECK_BOX if flag else ft.Icons.CHECK_BOX_OUTLINE_BLANK
 
-        # Refs de ícone para alternar visualmente o check/uncheck
         vig_icon_ref: ft.Ref[ft.Icon] = ft.Ref[ft.Icon]()
         ven_icon_ref: ft.Ref[ft.Icon] = ft.Ref[ft.Icon]()
         av_icon_ref:  ft.Ref[ft.Icon] = ft.Ref[ft.Icon]()
@@ -1001,7 +1076,6 @@ def main(page: ft.Page):
                 icon_ref.current.update()
             _update_filter_tooltip()
 
-        # Usa seu fluxo atual: recarrega dados e reconstrói a view
         def rebuild_page_content():
             _refresh_data(state["filters"], search.value or None)
             _update_filter_tooltip()
@@ -1020,7 +1094,6 @@ def main(page: ft.Page):
         def _on_filter_apply(e):
             rebuild_page_content()
 
-        # ---------- Itens de estado (pill + alinhados à esquerda) ----------
         mi_vigente = ft.MenuItemButton(
             close_on_click=False,
             style=item_style,
@@ -1079,7 +1152,6 @@ def main(page: ft.Page):
             ),
         )
 
-        # ---------- Divisor compatível (sem MenuDivider) ----------
         mi_divider = ft.MenuItemButton(
             close_on_click=False,
             content=ft.Container(width=MENU_W, height=1, bgcolor=get_theme_color("divider.default")),
@@ -1091,7 +1163,6 @@ def main(page: ft.Page):
             on_click=lambda e: None,
         )
 
-        # ---------- Ações como "pill" (filled / outlined) ----------
         mi_apply = ft.MenuItemButton(
             close_on_click=True,
             style=item_style,
@@ -1100,7 +1171,7 @@ def main(page: ft.Page):
                 width=MENU_W,
                 height=PILL["md"]["h"],
                 alignment=ft.alignment.center_left,
-                content=ft.Container(  # pill filled (primária)
+                content=ft.Container(
                     border_radius=BORDER_RADIUS_PILL,
                     bgcolor=get_theme_color("brand.primary.bg"),
                     padding=ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"]),
@@ -1125,7 +1196,7 @@ def main(page: ft.Page):
                 width=MENU_W,
                 height=PILL["md"]["h"],
                 alignment=ft.alignment.center_left,
-                content=ft.Container(  # pill outlined
+                content=ft.Container(
                     border_radius=BORDER_RADIUS_PILL,
                     border=ft.border.all(BORDER_WIDTH, get_theme_color("border.default")),
                     padding=ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"]),
@@ -1142,7 +1213,6 @@ def main(page: ft.Page):
             ),
         )
 
-        # ---------- Botão 40×40 com submenu ----------
         filter_btn = ft.Container(
             ref=filter_btn_ref,
             width=40, height=40,
@@ -1194,6 +1264,54 @@ def main(page: ft.Page):
         return root_row
 
     def show_ata_details(ata: dict):
+
+        # --- NOVA FUNÇÃO INTERNA PARA O DIÁLOGO DE E-MAIL ---
+        def show_email_dialog(e):
+            destinatario_field = tf(label="E-mail do Destinatário", autofocus=True)
+            progress_ring = ft.ProgressRing(visible=False, width=20, height=20)
+            
+            def send_action(e):
+                email_dest = destinatario_field.value.strip()
+                if not Validators.validar_email(email_dest):
+                    destinatario_field.error_text = "E-mail inválido"
+                    destinatario_field.update()
+                    return
+
+                send_button.disabled = True
+                progress_ring.visible = True
+                dialog.update()
+
+                success, message = enviar_email_ata(ata, email_dest)
+                
+                send_button.disabled = False
+                progress_ring.visible = False
+                
+                page.close(dialog)
+                show_snack(message, error=not success)
+            
+            send_button = pill_button("Enviar", on_click=send_action, icon="send")
+
+            dialog = ft.AlertDialog(
+                modal=True,
+                title=ft.Text("Enviar Detalhes da ATA por E-mail"),
+                content=ft.Column(
+                    controls=[
+                        ft.Text(f"Você está enviando os detalhes da ATA nº {ata['numero']}"),
+                        destinatario_field,
+                    ],
+                    tight=True,
+                    spacing=12,
+                ),
+                actions=[
+                    ft.Row([progress_ring]),
+                    pill_button("Cancelar", variant="text", on_click=lambda _: page.close(dialog)),
+                    send_button,
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+            page.open(dialog)
+
+        # --- ALTERAÇÃO NO CABEÇALHO PARA ADICIONAR O BOTÃO ---
         header = ft.Row(
             controls=[
                 ft.Column(controls=[
@@ -1204,6 +1322,7 @@ def main(page: ft.Page):
                     controls=[
                         pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: (set_content(AtasPage()), page.update())),
                         pill_button("Editar", icon="edit", variant="filled", on_click=lambda e, ata_=ata: show_ata_edit(ata_)),
+                        pill_button("Enviar E-mail", icon="email", variant="filled", on_click=show_email_dialog, style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE)),
                     ],
                     spacing=8,
                 ),
@@ -1264,8 +1383,8 @@ def main(page: ft.Page):
                 ft.Container(
                     padding=ft.padding.only(top=12),
                     content=ft.Row(controls=[ft.Text("Valor Total", weight=ft.FontWeight.W_600, color=get_theme_color("text.muted")),
-                                           ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=get_theme_color("text.muted"))],
-                                  alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                                            ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=get_theme_color("text.muted"))],
+                                      alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                 ),
             ], spacing=10),
         )
@@ -1540,29 +1659,23 @@ def main(page: ft.Page):
     )
 
     def init_ui_state():
-        # Define estado inicial da UI recolhida
         root.width = W_COLLAPSED
         title_box.width = 0
         title_text.opacity = 0
         theme_text_box.width = 0
         theme_text.opacity = 0
         
-        # Define o tema e as cores iniciais
         is_dark_initial = get_active_theme() == 'dark'
         theme_icon.name = "light_mode" if is_dark_initial else "dark_mode"
         theme_text.value = "Modo Claro" if is_dark_initial else "Modo Escuro"
 
-        # Aplica cores a todos os componentes
         update_theme_colors()
         
-        # Garante que os itens do menu estejam no estado visual correto
         for k in items:
             update_item_visual(k)
         
-        # Define a view inicial
         set_content(DashboardView())
 
-    # Inicializa o estado da UI e adiciona os componentes principais à página
     init_ui_state()
     page.add(ft.Row(controls=[root, content], expand=True, vertical_alignment=ft.CrossAxisAlignment.START))
     page.update()
