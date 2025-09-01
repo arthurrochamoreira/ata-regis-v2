@@ -978,61 +978,171 @@ def main(page: ft.Page):
                 btn.tooltip = _filter_label()
                 btn.update()
 
-        def _check_icon(flag: bool) -> ft.Icon:
-            return ft.Icon(ft.Icons.CHECK_BOX if flag else ft.Icons.CHECK_BOX_OUTLINE_BLANK, size=18)
+        # --------- PILL MENU (alinhado à esquerda) ----------
+        MENU_W = 184
+        item_style = ft.ButtonStyle(
+            padding=ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"]),
+            shape=ft.RoundedRectangleBorder(radius=BORDER_RADIUS_PILL),
+            overlay_color=TOKENS["colors"]["shadow"]["faint"],
+        )
 
-        def _toggle_flag(key: str, item: ft.MenuItemButton):
+        def _checked_icon(flag: bool):
+            return ft.Icons.CHECK_BOX if flag else ft.Icons.CHECK_BOX_OUTLINE_BLANK
+
+        # Refs de ícone para alternar visualmente o check/uncheck
+        vig_icon_ref: ft.Ref[ft.Icon] = ft.Ref[ft.Icon]()
+        ven_icon_ref: ft.Ref[ft.Icon] = ft.Ref[ft.Icon]()
+        av_icon_ref:  ft.Ref[ft.Icon] = ft.Ref[ft.Icon]()
+
+        def _toggle_flag_left(key: str, icon_ref: ft.Ref[ft.Icon]):
             state["filters"][key] = not state["filters"][key]
-            item.leading = _check_icon(state["filters"][key])
-            item.update()
+            if icon_ref.current:
+                icon_ref.current.name = _checked_icon(state["filters"][key])
+                icon_ref.current.update()
             _update_filter_tooltip()
 
+        # Usa seu fluxo atual: recarrega dados e reconstrói a view
         def rebuild_page_content():
-             _refresh_data(state["filters"], search.value or None)
-             _update_filter_tooltip()
-             # Recarrega a página de Atas
-             set_content(AtasPage())
-             page.update()
+            _refresh_data(state["filters"], search.value or None)
+            _update_filter_tooltip()
+            set_content(AtasPage())
+            page.update()
 
         def _on_filter_clear(e):
             for k in FILTER_KEYS:
                 state["filters"][k] = False
+            for ref in (vig_icon_ref, ven_icon_ref, av_icon_ref):
+                if ref.current:
+                    ref.current.name = _checked_icon(False)
+                    ref.current.update()
             rebuild_page_content()
 
         def _on_filter_apply(e):
             rebuild_page_content()
 
+        # ---------- Itens de estado (pill + alinhados à esquerda) ----------
         mi_vigente = ft.MenuItemButton(
             close_on_click=False,
-            leading=_check_icon(state["filters"]["vigente"]),
-            content=ft.Text("Vigentes"),
-            on_click=lambda e: _toggle_flag("vigente", e.control)
+            style=item_style,
+            on_click=lambda e: _toggle_flag_left("vigente", vig_icon_ref),
+            content=ft.Container(
+                width=MENU_W,
+                height=PILL["md"]["h"],
+                alignment=ft.alignment.center_left,
+                content=ft.Row(
+                    alignment=ft.MainAxisAlignment.START,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=8,
+                    controls=[
+                        ft.Icon(_checked_icon(state["filters"]["vigente"]), size=18, ref=vig_icon_ref, color=get_theme_color("text.primary")),
+                        ft.Text("Vigentes", size=13, weight=ft.FontWeight.W_500, color=get_theme_color("text.primary")),
+                    ],
+                ),
+            ),
         )
         mi_vencida = ft.MenuItemButton(
             close_on_click=False,
-            leading=_check_icon(state["filters"]["vencida"]),
-            content=ft.Text("Vencidas"),
-            on_click=lambda e: _toggle_flag("vencida", e.control)
+            style=item_style,
+            on_click=lambda e: _toggle_flag_left("vencida", ven_icon_ref),
+            content=ft.Container(
+                width=MENU_W,
+                height=PILL["md"]["h"],
+                alignment=ft.alignment.center_left,
+                content=ft.Row(
+                    alignment=ft.MainAxisAlignment.START,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=8,
+                    controls=[
+                        ft.Icon(_checked_icon(state["filters"]["vencida"]), size=18, ref=ven_icon_ref, color=get_theme_color("text.primary")),
+                        ft.Text("Vencidas", size=13, weight=ft.FontWeight.W_500, color=get_theme_color("text.primary")),
+                    ],
+                ),
+            ),
         )
         mi_a_vencer = ft.MenuItemButton(
             close_on_click=False,
-            leading=_check_icon(state["filters"]["a_vencer"]),
-            content=ft.Text("A Vencer"),
-            on_click=lambda e: _toggle_flag("a_vencer", e.control)
-        )
-        mi_apply = ft.MenuItemButton(
-            close_on_click=True,
-            leading=ft.Icon(ft.Icons.DONE, size=18),
-            content=ft.Text("Aplicar"),
-            on_click=_on_filter_apply,
-        )
-        mi_clear = ft.MenuItemButton(
-            close_on_click=True,
-            leading=ft.Icon(ft.Icons.CLEAR_ALL, size=18),
-            content=ft.Text("Limpar"),
-            on_click=_on_filter_clear,
+            style=item_style,
+            on_click=lambda e: _toggle_flag_left("a_vencer", av_icon_ref),
+            content=ft.Container(
+                width=MENU_W,
+                height=PILL["md"]["h"],
+                alignment=ft.alignment.center_left,
+                content=ft.Row(
+                    alignment=ft.MainAxisAlignment.START,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    spacing=8,
+                    controls=[
+                        ft.Icon(_checked_icon(state["filters"]["a_vencer"]), size=18, ref=av_icon_ref, color=get_theme_color("text.primary")),
+                        ft.Text("A Vencer", size=13, weight=ft.FontWeight.W_500, color=get_theme_color("text.primary")),
+                    ],
+                ),
+            ),
         )
 
+        # ---------- Divisor compatível (sem MenuDivider) ----------
+        mi_divider = ft.MenuItemButton(
+            close_on_click=False,
+            content=ft.Container(width=MENU_W, height=1, bgcolor=get_theme_color("divider.default")),
+            style=ft.ButtonStyle(
+                padding=ft.padding.symmetric(vertical=6, horizontal=PILL["md"]["px"]),
+                overlay_color=ft.Colors.TRANSPARENT,
+                shape=ft.RoundedRectangleBorder(radius=0),
+            ),
+            on_click=lambda e: None,
+        )
+
+        # ---------- Ações como "pill" (filled / outlined) ----------
+        mi_apply = ft.MenuItemButton(
+            close_on_click=True,
+            style=item_style,
+            on_click=_on_filter_apply,
+            content=ft.Container(
+                width=MENU_W,
+                height=PILL["md"]["h"],
+                alignment=ft.alignment.center_left,
+                content=ft.Container(  # pill filled (primária)
+                    border_radius=BORDER_RADIUS_PILL,
+                    bgcolor=get_theme_color("brand.primary.bg"),
+                    padding=ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"]),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.START,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=8,
+                        controls=[
+                            ft.Icon(ft.Icons.DONE, size=18, color=get_theme_color("text.inverse")),
+                            ft.Text("Aplicar", size=13, weight=ft.FontWeight.W_600, color=get_theme_color("text.inverse")),
+                        ],
+                    ),
+                ),
+            ),
+        )
+
+        mi_clear = ft.MenuItemButton(
+            close_on_click=True,
+            style=item_style,
+            on_click=_on_filter_clear,
+            content=ft.Container(
+                width=MENU_W,
+                height=PILL["md"]["h"],
+                alignment=ft.alignment.center_left,
+                content=ft.Container(  # pill outlined
+                    border_radius=BORDER_RADIUS_PILL,
+                    border=ft.border.all(BORDER_WIDTH, get_theme_color("border.default")),
+                    padding=ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"]),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.START,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        spacing=8,
+                        controls=[
+                            ft.Icon(ft.Icons.CLEAR_ALL, size=18, color=get_theme_color("text.muted")),
+                            ft.Text("Limpar", size=13, weight=ft.FontWeight.W_600, color=get_theme_color("text.muted")),
+                        ],
+                    ),
+                ),
+            ),
+        )
+
+        # ---------- Botão 40×40 com submenu ----------
         filter_btn = ft.Container(
             ref=filter_btn_ref,
             width=40, height=40,
@@ -1043,11 +1153,16 @@ def main(page: ft.Page):
             bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
             tooltip=_filter_label(),
             content=ft.SubmenuButton(
-                style=ft.ButtonStyle(padding=ft.padding.all(0), shape=ft.RoundedRectangleBorder(radius=999)),
+                style=ft.ButtonStyle(
+                    padding=ft.padding.all(0),
+                    shape=ft.RoundedRectangleBorder(radius=999),
+                    overlay_color=TOKENS["colors"]["shadow"]["faint"],
+                ),
                 content=ft.Icon(ft.Icons.FILTER_LIST, size=20, color=get_theme_color("text.primary")),
-                controls=[mi_vigente, mi_vencida, mi_a_vencer, mi_apply, mi_clear],
+                controls=[mi_vigente, mi_vencida, mi_a_vencer, mi_divider, mi_apply, mi_clear],
             ),
         )
+
         sort_btn = round_icon_button("sort", "Ordenar")
         new_btn = round_icon_button("add", "Nova Ata", on_click=lambda _: show_ata_edit({}))
 
