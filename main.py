@@ -900,7 +900,7 @@ def main(page: ft.Page):
     def _filter_label() -> str:
         n = _filters_count()
         return f"Filtrar ({n})" if n else "Filtrar"
-
+    
     def AtasPage():
         # ----- helper: botão redondo com ícone (hover/ink 100% circulares) -----
         def round_icon_button(icon_name: str, tooltip: str, on_click=None):
@@ -915,10 +915,10 @@ def main(page: ft.Page):
                 ink=True,
                 on_click=on_click,
                 tooltip=tooltip,
-                # ADICIONE ESTA LINHA TAMBÉM AQUI:
                 clip_behavior=ft.ClipBehavior.HARD_EDGE,
             )
 
+        # ----- Busca -----
         input_padding = ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"])
         search = tf(
             hint_text="Buscar atas...",
@@ -930,13 +930,171 @@ def main(page: ft.Page):
             expand=True,
         )
 
+        # Contêiner raiz desta view (não chame update antes de estar anexado)
+        root_row = ft.ResponsiveRow(columns=12, spacing=16, run_spacing=16)
+
+        def build_cards():
+            filter_state = state.get("filters", {key: False for key in FILTER_KEYS})
+            show_all = not any(filter_state.values())
+            cards = []
+
+            filter_map = {
+                'vigente':   {'title': 'Atas Vigentes', 'icon': 'check_circle', 'data': ATAS['vigentes'], 'variant': 'green'},
+                'vencida':   {'title': 'Atas Vencidas', 'icon': 'cancel',       'data': ATAS['vencidas'], 'variant': 'red'},
+                'a_vencer':  {'title': 'Atas a Vencer', 'icon': 'schedule',     'data': ATAS['aVencer'],  'variant': 'amber'},
+            }
+
+            for key in FILTER_KEYS:
+                if show_all or filter_state.get(key):
+                    info = filter_map[key]
+                    cards.append(AtasSectionCard(info['title'], info['icon'], info['data'], variant=info['variant']))
+            return cards
+
+        # ====== SUBMENU que NÃO fecha ao marcar filtros ======
+        filter_btn_ref: ft.Ref[ft.Container] = ft.Ref[ft.Container]()
+
+        def _filters_count() -> int:
+            return sum(state["filters"].values())
+
+        def _filter_label() -> str:
+            n = _filters_count()
+            return f"Filtrar ({n})" if n else "Filtrar"
+
+        def _update_filter_tooltip():
+            btn = filter_btn_ref.current
+            # Só atualiza se o botão já está anexado ao page
+            if btn and getattr(btn, "page", None):
+                btn.tooltip = _filter_label()
+                btn.update()
+
+        def _check_icon(flag: bool) -> ft.Icon:
+            return ft.Icon(ft.Icons.CHECK_BOX if flag else ft.Icons.CHECK_BOX_OUTLINE_BLANK, size=18)
+
+        # Handlers de clique nos itens do menu
+        def _toggle_flag(key: str, item: ft.MenuItemButton):
+            state["filters"][key] = not state["filters"][key]
+            item.leading = _check_icon(state["filters"][key])
+            item.update()
+            _update_filter_tooltip()
+
+        def _on_filter_clear(e):
+            # Limpar NÃO fecha o menu nem aplica; só zera os checks
+            for k in FILTER_KEYS:
+                state["filters"][k] = False
+            mi_vigente.leading = _check_icon(False); mi_vigente.update()
+            mi_vencida.leading = _check_icon(False); mi_vencida.update()
+            mi_a_vencer.leading = _check_icon(False); mi_a_vencer.update()
+            _update_filter_tooltip()
+
+        def _on_filter_apply(e):
+            # Aplicar fecha (close_on_click=True) e ATUALIZA os cards
+            _refresh_data(state["filters"], search.value or None)
+            _update_filter_tooltip()
+            rebuild()
+
+        # Itens do menu com ícone inicial já definido (sem update aqui!)
+        mi_vigente = ft.MenuItemButton(
+            close_on_click=False,
+            leading=_check_icon(state["filters"]["vigente"]),
+            content=ft.Text("Vigentes"),
+        )
+        mi_vencida = ft.MenuItemButton(
+            close_on_click=False,
+            leading=_check_icon(state["filters"]["vencida"]),
+            content=ft.Text("Vencidas"),
+        )
+        mi_a_vencer = ft.MenuItemButton(
+            close_on_click=False,
+            leading=_check_icon(state["filters"]["a_vencer"]),
+            content=ft.Text("A Vencer"),
+        )
+        # Amarra on_click depois de criados (serão clicados já no page)
+        mi_vigente.on_click = lambda e: _toggle_flag("vigente", mi_vigente)
+        mi_vencida.on_click = lambda e: _toggle_flag("vencida", mi_vencida)
+        mi_a_vencer.on_click = lambda e: _toggle_flag("a_vencer", mi_a_vencer)
+
+        mi_apply = ft.MenuItemButton(
+            close_on_click=True,  # fecha ao aplicar
+            leading=ft.Icon(ft.Icons.DONE, size=18),
+            content=ft.Text("Aplicar"),
+            on_click=_on_filter_apply,
+        )
+        mi_clear = ft.MenuItemButton(
+            close_on_click=False,  # NÃO fecha
+            leading=ft.Icon(ft.Icons.CLEAR_ALL, size=18),
+            content=ft.Text("Limpar"),
+            on_click=_on_filter_clear,
+        )
+        mi_close = ft.MenuItemButton(
+            close_on_click=True,  # fecha sem aplicar
+            leading=ft.Icon(ft.Icons.CLOSE, size=18),
+            content=ft.Text("Fechar"),
+        )
+
+        # Botão circular 40×40 com SubmenuButton centralizado
+        filter_btn = ft.Container(
+            ref=filter_btn_ref,
+            width=40,
+            height=40,
+            alignment=ft.alignment.center,
+            border_radius=999,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+            border=ft.border.all(BORDER_WIDTH, border_token()),
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
+            tooltip=_filter_label(),
+            content=ft.SubmenuButton(
+                style=ft.ButtonStyle(
+                    padding=ft.padding.all(0),
+                    shape=ft.RoundedRectangleBorder(radius=999),
+                ),
+                content=ft.Icon(ft.Icons.FILTER_LIST, size=20, color=text_color()),
+                controls=[mi_vigente, mi_vencida, mi_a_vencer, mi_apply, mi_clear, mi_close],
+            ),
+        )
+
+        # --- outros botões circulares (mantidos) ---
+        sort_btn = round_icon_button("sort", "Ordenar")
+        new_btn = round_icon_button("add", "Nova Ata", on_click=lambda _: show_ata_edit({}))
+
+        actions = ft.Row(
+            controls=[filter_btn, sort_btn, new_btn],
+            spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+
+        # Topo (criado uma vez; reaproveitado em rebuild)
+        top_container = ft.Container(
+            col=12,
+            bgcolor=surface_bg(),
+            border_radius=16,
+            padding=16,
+            shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=TOKENS["colors"]["shadow"]["faint"]),
+            content=ft.Row(
+                controls=[ft.Container(content=search, expand=True), actions],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=12,
+            ),
+        )
+
+        def rebuild():
+            # Reconstrói conteúdo; só chama update se já estiver no page
+            root_row.controls = [top_container, *build_cards()]
+            if getattr(root_row, "page", None):
+                root_row.update()
+
         def _on_search(e):
             _refresh_data(state["filters"], search.value or None)
-            set_content(AtasPage())
+            rebuild()
 
         search.on_submit = _on_search
 
+        # Carrega dados iniciais e compõe SEM update (a view ainda não foi anexada)
         _refresh_data(state["filters"], search.value or None)
+        root_row.controls = [top_container, *build_cards()]
+        return root_row
+
+
 
         # ====== PopupMenuButton (substitui MenuAnchor do botão de filtro) ======
         pb_ref: ft.Ref[ft.PopupMenuButton] = ft.Ref[ft.PopupMenuButton]()
