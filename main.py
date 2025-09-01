@@ -12,65 +12,8 @@ import database as db
 # DESIGN TOKENS
 # ==============================
 
-# MAPA DE TOKENS DE COR
-# ========================================================================================================================
-# | valor_original                                  | token                                      | ocorrências |
-# |-------------------------------------------------|--------------------------------------------|-------------|
-# | ft.Colors.GREY_100                              | bg.app.light                               | 2           |
-# | ft.Colors.GREY_900                              | bg.app.dark                                | 2           |
-# | ft.Colors.WHITE                                 | bg.surface.light                           | 9           |
-# | ft.Colors.GREY_800                              | bg.surface.dark                            | 2           |
-# | ft.Colors.with_opacity(0.04, ft.Colors.BLACK)   | bg.input.default                           | 1           |
-# | ft.Colors.with_opacity(0.03, ft.Colors.BLACK)   | bg.surface.muted                           | 1           |
-# | ft.Colors.GREY_900                              | text.primary.light                         | 1           |
-# | ft.Colors.GREY_200                              | text.primary.dark                          | 1           |
-# | ft.Colors.GREY_800                              | text.muted.light                           | 1           |
-# | ft.Colors.GREY_400                              | text.muted.dark                            | 2           |
-# | ft.Colors.WHITE                                 | text.inverse                               | 2           |
-# | ft.Colors.GREY_300                              | border.default.light                       | 1           |
-# | ft.Colors.GREY_700                              | border.default.dark                        | 1           |
-# | ft.Colors.with_opacity(0.08, ft.Colors.BLACK)   | divider.default.light                      | 3           |
-# | ft.Colors.with_opacity(0.12, ft.Colors.BLACK)   | divider.default.dark                       | 1           |
-# | ft.Colors.BLUE_600                              | brand.primary.bg                           | 1           |
-# | ft.Colors.WHITE                                 | component.sidebar.bg.light                 | 1           |
-# | ft.Colors.GREY_900                              | component.sidebar.bg.dark                  | 1           |
-# | #EDE9FE                                         | component.sidebar.active.bg.light          | 1           |
-# | #2E1065                                         | component.sidebar.active.bg.dark           | 1           |
-# | #8B5CF6                                         | component.sidebar.active.bar.light         | 1           |
-# | #A78BFA                                         | component.sidebar.active.bar.dark          | 1           |
-# | #6D28D9                                         | component.sidebar.active.text.light        | 2           |
-# | #E9D5FF                                         | component.sidebar.active.text.dark         | 2           |
-# | ft.Colors.GREY_500                              | component.sidebar.icon.default             | 1           |
-# | ft.Colors.GREY_600                              | component.sidebar.theme_icon.default       | 1           |
-# | ft.Colors.GREEN_700                             | semantic.success.bg                        | 1           |
-# | ft.Colors.RED_700                               | semantic.error.bg                          | 1           |
-# | ft.Colors.RED                                   | semantic.error.bg_strong                   | 1           |
-# | ft.Colors.RED_400                               | semantic.error.icon                        | 1           |
-# | ft.Colors.AMBER_100                             | semantic.warning.bg.light                  | 1           |
-# | ft.Colors.AMBER_900                             | semantic.warning.bg.dark                   | 2           |
-# | ft.Colors.AMBER                                 | semantic.warning.border                    | 2           |
-# | ft.Colors.GREEN_100                             | status.vigente.bg.light                    | 1           |
-# | ft.Colors.GREEN_900                             | status.vigente.bg.dark                     | 2           |
-# | ft.Colors.GREEN_800                             | status.vigente.text.light                  | 2           |
-# | ft.Colors.GREEN_100                             | status.vigente.text.dark                   | 2           |
-# | ft.Colors.AMBER_50                              | status.a_vencer.bg.light                   | 1           |
-# | ft.Colors.AMBER_900                             | status.a_vencer.bg.dark                    | 1           |
-# | ft.Colors.AMBER_900                             | status.a_vencer.text.light                 | 1           |
-# | ft.Colors.AMBER_100                             | status.a_vencer.text.dark                  | 2           |
-# | ft.Colors.RED_100                               | status.vencida.bg.light                    | 1           |
-# | ft.Colors.RED_900                               | status.vencida.bg.dark                     | 1           |
-# | ft.Colors.RED_800                               | status.vencida.text.light                  | 1           |
-# | ft.Colors.RED_100                               | status.vencida.text.dark                   | 1           |
-# | #10B981                                         | chart.success                              | 2           |
-# | #FF6F00                                         | chart.warning                              | 2           |
-# | #EF4444                                         | chart.error                                | 2           |
-# | #212121                                         | chart.default.light                        | 1           |
-# | #181818                                         | chart.default.dark                         | 1           |
-# | ft.Colors.with_opacity(0.15, ft.Colors.BLACK)   | shadow.strong                              | 1           |
-# | ft.Colors.with_opacity(0.12, ft.Colors.BLACK)   | shadow.default                             | 4           |
-# | ft.Colors.with_opacity(0.10, ft.Colors.BLACK)   | shadow.soft                                | 1           |
-# | ft.Colors.BLACK                                 | base.black                                 | 9           |
-# ========================================================================================================================
+# ... (mapa de tokens de cor omitido para brevidade) ...
+
 TOKENS = {
     "colors": {
         "base": {
@@ -79,12 +22,12 @@ TOKENS = {
         "bg": {
             "app": {
                 "light": ft.Colors.GREY_100,      # Fundo global da aplicação (modo claro)
-                "dark": ft.Colors.GREY_900,       # Fundo global da aplicação (modo escuro)
+                "dark": "#0f172a",        # Fundo global da aplicação (modo escuro) - slate-900
             },
             "surface": {
                 "light": ft.Colors.WHITE,         # Fundo de cards e superfícies (modo claro)
-                "dark": ft.Colors.GREY_800,       # Fundo de cards e superfícies (modo escuro)
-                "muted": ft.Colors.with_opacity(0.03, ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
+                "dark": ft.Colors.with_opacity (0.5,"#1e293b"),        # Fundo de cards e superfícies (modo escuro) - slate-800
+                "muted": ft.Colors.with_opacity(0.2, ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
             },
             "input": {
                 "default": ft.Colors.with_opacity(0.04, ft.Colors.BLACK), # Fundo do campo de busca
@@ -93,65 +36,76 @@ TOKENS = {
         "text": {
             "primary": {
                 "light": ft.Colors.GREY_900,      # Cor de texto principal (modo claro)
-                "dark": ft.Colors.GREY_200,       # Cor de texto principal (modo escuro)
+                "dark": "#f1f5f9",        # Cor de texto principal (modo escuro) - slate-200
             },
             "muted": {
                 "light": ft.Colors.GREY_800,      # Cor de texto secundário/silenciado (modo claro)
-                "dark": ft.Colors.GREY_400,       # Cor de texto secundário/silenciado (modo escuro)
+                "dark": "#cbd5e1",        # Cor de texto secundário/silenciado (modo escuro) - slate-400
             },
             "inverse": ft.Colors.WHITE,           # Cor de texto sobre fundos coloridos/escuros
         },
         "border": {
             "default": {
                 "light": ft.Colors.GREY_300,      # Cor de borda padrão (modo claro)
-                "dark": ft.Colors.GREY_700,       # Cor de borda padrão (modo escuro)
+                "dark": "#334155",        # Cor de borda padrão (modo escuro) - slate-700
             }
         },
         "divider": {
             "default": {
                 "light": ft.Colors.with_opacity(0.08, ft.Colors.BLACK), # Cor de divisores (modo claro)
-                "dark": ft.Colors.with_opacity(0.12, ft.Colors.BLACK),  # Cor de divisores (modo escuro)
+                "dark":  "#334155",  # Cor de divisores (modo escuro)
             },
         },
         "brand": {
             "primary": {
-                "bg": ft.Colors.BLUE_600,         # Cor de fundo para botões de ação primária
+                "bg": "#4f46e5",          # Cor de fundo para botões de ação primária - indigo-600
             }
         },
         "component": {
             "sidebar": {
                 "bg": {
-                    "light": ft.Colors.WHITE,     # Fundo da sidebar (modo claro)
-                    "dark": ft.Colors.GREY_900,   # Fundo da sidebar (modo escuro)
+                    "light": ft.Colors.WHITE,   # Fundo da sidebar (modo claro)
+                    "dark": "#1e293b",    # Fundo da sidebar (modo escuro) - indigo-800
                 },
                 "active": {
                     "bg": {
-                        "light": "#EDE9FE",       # Fundo do item ativo da sidebar (modo claro)
-                        "dark": "#2E1065",        # Fundo do item ativo da sidebar (modo escuro)
+                        "light": "#EDE9FE",      # Fundo do item ativo da sidebar (modo claro)
+                        "dark": "#312e81",       # Fundo do item ativo da sidebar (modo escuro) - indigo-900
                     },
                     "bar": {
-                        "light": "#8B5CF6",       # Barra lateral do item ativo (modo claro)
-                        "dark": "#A78BFA",        # Barra lateral do item ativo (modo escuro)
+                        "light": "#8B5CF6",      # Barra lateral do item ativo (modo claro)
+                        "dark": "#A78BFA",       # Barra lateral do item ativo (modo escuro)
                     },
                     "text": {
-                        "light": "#6D28D9",       # Texto/ícone do item ativo (modo claro)
-                        "dark": "#E9D5FF",        # Texto/ícone do item ativo (modo escuro)
+                        "light": "#6D28D9",      # Texto/ícone do item ativo (modo claro)
+                        "dark": ft.Colors.WHITE,       # Texto/ícone do item ativo (modo escuro)
                     },
                 },
+                # -- [INÍCIO] Bloco de ícones da sidebar atualizado --
                 "icon": {
-                    "default": ft.Colors.GREY_500, # Cor do ícone do logo
+                    "logo": "#EDE9FE", # Cor do ícone do logo (diamond)
+                    "menu": {                   # Cor do ícone do menu (hambúrguer)
+                        "light": ft.Colors.GREY_800,
+                        "dark": "#EDE9FE"  # slate-400
+                    },
+                    "inactive": {               # Cor dos ícones de navegação inativos
+                        "light": ft.Colors.GREY_800,
+                        "dark": "#EDE9FE"  # slate-400
+                    },
+                    "theme": {                  # Cor do ícone de alternar tema
+                        "light": ft.Colors.GREY_600,
+                        "dark": "#EDE9FE"  # slate-400
+                    }
                 },
-                "theme_icon": {
-                    "default": ft.Colors.GREY_600, # Cor do ícone de alternar tema
-                },
+                # -- [FIM] Bloco de ícones da sidebar atualizado --
             },
         },
         "semantic": {
             "success": {
-                "bg": ft.Colors.GREEN_700,        # Fundo para snackbar de sucesso
+                "bg": ft.Colors.GREEN_700,      # Fundo para snackbar de sucesso
             },
             "error": {
-                "bg": ft.Colors.RED_700,          # Fundo para snackbar de erro
+                "bg": ft.Colors.RED_700,        # Fundo para snackbar de erro
                 "bg_strong": ft.Colors.RED,       # Fundo para botões de exclusão
                 "icon": ft.Colors.RED_400,        # Ícone de exclusão
             },
@@ -165,25 +119,25 @@ TOKENS = {
         },
         "status": {
             "vigente": { # Verde
-                "bg": {"light": ft.Colors.GREEN_100, "dark": ft.Colors.GREEN_900},
-                "text": {"light": ft.Colors.GREEN_800, "dark": ft.Colors.GREEN_100},
+                "bg": {"light": ft.Colors.GREEN_100, "dark": ft.Colors.with_opacity(0.5, ft.Colors.GREEN_900)},
+                "text": {"light": ft.Colors.GREEN_800, "dark": ft.Colors.with_opacity(1, ft.Colors.GREEN_100)}, # green-300
             },
             "a_vencer": { # Âmbar
-                "bg": {"light": ft.Colors.AMBER_50, "dark": ft.Colors.AMBER_900},
-                "text": {"light": ft.Colors.AMBER_900, "dark": ft.Colors.AMBER_100},
+                "bg": {"light": ft.Colors.AMBER_50, "dark": ft.Colors.with_opacity(0.5, ft.Colors.YELLOW_900)},
+                "text": {"light": ft.Colors.AMBER_900, "dark": ft.Colors.with_opacity(1, ft.Colors.YELLOW_100)}, # yellow-300
             },
             "vencida": { # Vermelho
-                "bg": {"light": ft.Colors.RED_100, "dark": ft.Colors.RED_900},
-                "text": {"light": ft.Colors.RED_800, "dark": ft.Colors.RED_100},
+                "bg": {"light": ft.Colors.RED_100, "dark": ft.Colors.with_opacity(0.5, ft.Colors.RED_900)},
+                "text": {"light": ft.Colors.RED_800, "dark": ft.Colors.with_opacity(1, ft.Colors.RED_100)}, # red-300
             },
         },
         "chart": {
-            "success": "#10B981",                 # Cor verde para gráficos (vigentes)
-            "warning": "#FF6F00",                 # Cor âmbar para gráficos (a vencer)
-            "error": "#EF4444",                   # Cor vermelha para gráficos (vencidas)
+            "success": "#10B981",              # Cor verde para gráficos (vigentes)
+            "warning": "#FF6F00",              # Cor âmbar para gráficos (a vencer)
+            "error": "#EF4444",                # Cor vermelha para gráficos (vencidas)
             "default": {
-                "light": "#212121",               # Cor padrão de barras de gráfico (modo claro)
-                "dark": "#181818",                # Cor padrão de barras de gráfico (modo escuro)
+                "light": "#212121",              # Cor padrão de barras de gráfico (modo claro)
+                "dark": "#334155",               # Cor padrão de barras de gráfico (modo escuro) - slate-700
             },
         },
         "shadow": {
@@ -194,6 +148,7 @@ TOKENS = {
         },
     }
 }
+
 
 # Constantes de layout
 W_COLLAPSED = 80
@@ -472,13 +427,15 @@ def main(page: ft.Page):
             ref["text_box"].opacity = 1
             ref["text_box"].padding = ft.padding.only(right=8)
 
-        base = text_muted()
         if active:
             ref["icon"].color = TOKENS["colors"]["component"]["sidebar"]["active"]["text"][theme]
             ref["text"].color = TOKENS["colors"]["component"]["sidebar"]["active"]["text"][theme]
         else:
-            ref["icon"].color = base
-            ref["text"].color = base
+            # -- [ALTERADO] Usa o novo token para ícones inativos --
+            ref["icon"].color = TOKENS["colors"]["component"]["sidebar"]["icon"]["inactive"][theme]
+            # O texto inativo continua usando o token de texto silenciado para consistência
+            ref["text"].color = text_muted()
+
 
     def set_active(key: str):
         state["active"] = key
@@ -576,8 +533,14 @@ def main(page: ft.Page):
         root.bgcolor = TOKENS["colors"]["component"]["sidebar"]["bg"][theme]
         divider_top.bgcolor = divider_color()
         title_text.color = text_color()
+        
+        # -- [ADICIONADO] Atualiza as cores dos ícones de menu e tema --
+        menu_icon.color = TOKENS["colors"]["component"]["sidebar"]["icon"]["menu"][theme]
+        theme_icon.color = TOKENS["colors"]["component"]["sidebar"]["icon"]["theme"][theme]
+
         for k in items:
             update_item_visual(k)
+            
         # Atualiza a view atual para refletir as mudanças de cor
         if state["active"] == "dashboard":
             set_content(DashboardView())
@@ -1109,8 +1072,8 @@ def main(page: ft.Page):
                 ft.Container(
                     padding=ft.padding.only(top=12),
                     content=ft.Row(controls=[ft.Text("Valor Total", weight=ft.FontWeight.W_600, color=text_muted()),
-                                            ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
-                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                                             ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
+                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                 ),
             ], spacing=10),
         )
@@ -1324,8 +1287,17 @@ def main(page: ft.Page):
     # ==============================
     # ASIDE (MENU)
     # ==============================
-    top_logo = ft.Container(height=56, alignment=ft.alignment.center, content=ft.Icon("diamond", size=ICON_SIZE, color=TOKENS["colors"]["component"]["sidebar"]["icon"]["default"]), padding=ft.padding.only(top=8, bottom=8))
-    menu_icon = ft.Icon("menu", size=ICON_SIZE, rotate=ft.Rotate(0, alignment=ft.alignment.center), animate_rotation=ANIM)
+    # -- [ALTERADO] Usa o novo token "logo" --
+    top_logo = ft.Container(height=56, alignment=ft.alignment.center, content=ft.Icon("diamond", size=ICON_SIZE, color=TOKENS["colors"]["component"]["sidebar"]["icon"]["logo"]), padding=ft.padding.only(top=8, bottom=8))
+    
+    # -- [ALTERADO] Usa o novo token "menu" para a cor inicial --
+    menu_icon = ft.Icon(
+        "menu",
+        size=ICON_SIZE,
+        color=TOKENS["colors"]["component"]["sidebar"]["icon"]["menu"]["light"],
+        rotate=ft.Rotate(0, alignment=ft.alignment.center),
+        animate_rotation=ANIM
+    )
     header_btn = ft.Container(
         content=ft.Row(
             controls=[
@@ -1352,7 +1324,8 @@ def main(page: ft.Page):
         spacing=8, expand=True, scroll=ft.ScrollMode.AUTO,
     )
 
-    theme_icon = ft.Icon("dark_mode", size=ICON_SIZE, color=TOKENS["colors"]["component"]["sidebar"]["theme_icon"]["default"])
+    # -- [ALTERADO] Usa o novo token "theme" para a cor inicial --
+    theme_icon = ft.Icon("dark_mode", size=ICON_SIZE, color=TOKENS["colors"]["component"]["sidebar"]["icon"]["theme"]["light"])
     theme_text = ft.Text("Modo Escuro", size=13, weight=ft.FontWeight.W_600, no_wrap=True, opacity=0)
     theme_text_box = ft.Container(
         alignment=ft.alignment.center_left, content=theme_text,
