@@ -12,8 +12,6 @@ import database as db
 # DESIGN TOKENS
 # ==============================
 
-# ... (mapa de tokens de cor omitido para brevidade) ...
-
 TOKENS = {
     "colors": {
         "base": {
@@ -22,11 +20,11 @@ TOKENS = {
         "bg": {
             "app": {
                 "light": ft.Colors.GREY_100,      # Fundo global da aplicação (modo claro)
-                "dark": "#0f172a",        # Fundo global da aplicação (modo escuro) - slate-900
+                "dark": "#0f172a",          # Fundo global da aplicação (modo escuro) - slate-900
             },
             "surface": {
                 "light": ft.Colors.WHITE,         # Fundo de cards e superfícies (modo claro)
-                "dark": ft.Colors.with_opacity (0.5,"#1e293b"),        # Fundo de cards e superfícies (modo escuro) - slate-800
+                "dark": ft.Colors.with_opacity (0.5,"#1e293b"),       # Fundo de cards e superfícies (modo escuro) - slate-800
                 "muted": ft.Colors.with_opacity(0.2, ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
             },
             "input": {
@@ -36,24 +34,24 @@ TOKENS = {
         "text": {
             "primary": {
                 "light": ft.Colors.GREY_900,      # Cor de texto principal (modo claro)
-                "dark": "#f1f5f9",        # Cor de texto principal (modo escuro) - slate-200
+                "dark": "#f1f5f9",          # Cor de texto principal (modo escuro) - slate-100
             },
             "muted": {
                 "light": ft.Colors.GREY_800,      # Cor de texto secundário/silenciado (modo claro)
-                "dark": "#cbd5e1",        # Cor de texto secundário/silenciado (modo escuro) - slate-400
+                "dark": "#cbd5e1",          # Cor de texto secundário/silenciado (modo escuro) - slate-300
             },
-            "inverse": ft.Colors.WHITE,           # Cor de texto sobre fundos coloridos/escuros
+            "inverse": ft.Colors.WHITE,          # Cor de texto sobre fundos coloridos/escuros
         },
         "border": {
             "default": {
                 "light": ft.Colors.GREY_300,      # Cor de borda padrão (modo claro)
-                "dark": "#334155",        # Cor de borda padrão (modo escuro) - slate-700
+                "dark": "#334155",          # Cor de borda padrão (modo escuro) - slate-700
             }
         },
         "divider": {
             "default": {
                 "light": ft.Colors.with_opacity(0.08, ft.Colors.BLACK), # Cor de divisores (modo claro)
-                "dark":  "#334155",  # Cor de divisores (modo escuro)
+                "dark":  "#334155",  # Cor de divisores (modo escuro) - slate-700
             },
         },
         "brand": {
@@ -65,7 +63,7 @@ TOKENS = {
             "sidebar": {
                 "bg": {
                     "light": ft.Colors.WHITE,   # Fundo da sidebar (modo claro)
-                    "dark": "#1e293b",    # Fundo da sidebar (modo escuro) - indigo-800
+                    "dark": "#1e293b",    # Fundo da sidebar (modo escuro) - slate-800
                 },
                 "active": {
                     "bg": {
@@ -81,23 +79,21 @@ TOKENS = {
                         "dark": ft.Colors.WHITE,       # Texto/ícone do item ativo (modo escuro)
                     },
                 },
-                # -- [INÍCIO] Bloco de ícones da sidebar atualizado --
                 "icon": {
                     "logo": "#EDE9FE", # Cor do ícone do logo (diamond)
-                    "menu": {                   # Cor do ícone do menu (hambúrguer)
+                    "menu": {              # Cor do ícone do menu (hambúrguer)
                         "light": ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
-                    "inactive": {               # Cor dos ícones de navegação inativos
+                    "inactive": {              # Cor dos ícones de navegação inativos
                         "light": ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
-                    "theme": {                  # Cor do ícone de alternar tema
+                    "theme": {              # Cor do ícone de alternar tema
                         "light": ft.Colors.GREY_600,
                         "dark": "#EDE9FE"  # slate-400
                     }
                 },
-                # -- [FIM] Bloco de ícones da sidebar atualizado --
             },
         },
         "semantic": {
@@ -119,22 +115,22 @@ TOKENS = {
         },
         "status": {
             "vigente": { # Verde
-                "bg": {"light": ft.Colors.GREEN_100, "dark": ft.Colors.with_opacity(0.5, ft.Colors.GREEN_900)},
-                "text": {"light": ft.Colors.GREEN_800, "dark": ft.Colors.with_opacity(1, ft.Colors.GREEN_100)}, # green-300
+                "bg": {"light": ft.Colors.GREEN_100, "dark": ft.Colors.with_opacity(0.1, "#4ade80")},
+                "text": {"light": ft.Colors.GREEN_800, "dark": "#86efac"}, # green-300
             },
             "a_vencer": { # Âmbar
-                "bg": {"light": ft.Colors.AMBER_50, "dark": ft.Colors.with_opacity(0.5, ft.Colors.YELLOW_900)},
-                "text": {"light": ft.Colors.AMBER_900, "dark": ft.Colors.with_opacity(1, ft.Colors.YELLOW_100)}, # yellow-300
+                "bg": {"light": ft.Colors.AMBER_50, "dark": ft.Colors.with_opacity(0.1, "#facc15")},
+                "text": {"light": ft.Colors.AMBER_900, "dark": "#facc15"}, # yellow-400
             },
             "vencida": { # Vermelho
-                "bg": {"light": ft.Colors.RED_100, "dark": ft.Colors.with_opacity(0.5, ft.Colors.RED_900)},
-                "text": {"light": ft.Colors.RED_800, "dark": ft.Colors.with_opacity(1, ft.Colors.RED_100)}, # red-300
+                "bg": {"light": ft.Colors.RED_100, "dark": ft.Colors.with_opacity(0.1, "#f87171")},
+                "text": {"light": ft.Colors.RED_800, "dark": "#fca5a5"}, # red-300
             },
         },
         "chart": {
             "success": "#10B981",              # Cor verde para gráficos (vigentes)
             "warning": "#FF6F00",              # Cor âmbar para gráficos (a vencer)
-            "error": "#EF4444",                # Cor vermelha para gráficos (vencidas)
+            "error": "#EF4444",              # Cor vermelha para gráficos (vencidas)
             "default": {
                 "light": "#212121",              # Cor padrão de barras de gráfico (modo claro)
                 "dark": "#334155",               # Cor padrão de barras de gráfico (modo escuro) - slate-700
@@ -303,7 +299,9 @@ class Validators:
     @staticmethod
     def validar_valor_positivo(valor: str) -> Optional[float]:
         try:
-            val = float(valor.replace("R$", "").replace(".", "").replace(",", ".").strip())
+            val = float(
+                valor.replace("R$", "").replace(".", "").replace(",", ".").strip()
+            )
             if val > 0:
                 return val
         except (ValueError, TypeError):
@@ -431,9 +429,7 @@ def main(page: ft.Page):
             ref["icon"].color = TOKENS["colors"]["component"]["sidebar"]["active"]["text"][theme]
             ref["text"].color = TOKENS["colors"]["component"]["sidebar"]["active"]["text"][theme]
         else:
-            # -- [ALTERADO] Usa o novo token para ícones inativos --
             ref["icon"].color = TOKENS["colors"]["component"]["sidebar"]["icon"]["inactive"][theme]
-            # O texto inativo continua usando o token de texto silenciado para consistência
             ref["text"].color = text_muted()
 
 
@@ -534,7 +530,6 @@ def main(page: ft.Page):
         divider_top.bgcolor = divider_color()
         title_text.color = text_color()
         
-        # -- [ADICIONADO] Atualiza as cores dos ícones de menu e tema --
         menu_icon.color = TOKENS["colors"]["component"]["sidebar"]["icon"]["menu"][theme]
         theme_icon.color = TOKENS["colors"]["component"]["sidebar"]["icon"]["theme"][theme]
 
@@ -758,23 +753,33 @@ def main(page: ft.Page):
         page.open(confirm_dialog)
 
     def AtasSectionCard(title: str, icon_name: str, data: list[dict], variant: str | None = None):
-        def vsep(h=28):
-            return ft.Container(width=1, height=h, bgcolor=divider_color())
-
+        # ===== resolve variant =====
         if not variant:
             t = (title or "").lower()
             if "vigentes" in t: variant = "green"
             elif "a vencer" in t or "à vencer" in t: variant = "amber"
             elif "vencidas" in t: variant = "red"
             else: variant = "red"
-        
         variant_map = {"green": "vigente", "amber": "a_vencer", "red": "vencida"}
         variant_key = variant_map.get(variant, "vencida")
         theme = _theme_key()
-
         bg_color = TOKENS["colors"]["status"][variant_key]["bg"][theme]
         icon_color = TOKENS["colors"]["status"][variant_key]["text"][theme]
 
+        # ===== helper: ícone clicável sem padding =====
+        def action_icon(name: str, tooltip: str, on_click, color=None):
+            return ft.Container(
+                content=ft.Icon(name, size=18, color=color or text_color()),
+                tooltip=tooltip,
+                alignment=ft.alignment.center,
+                padding=0,
+                margin=0,
+                border_radius=8,
+                ink=True,                 # ripple material
+                on_click=on_click,
+            )
+
+        # ===== Header do card (ESQUERDA) =====
         header = ft.Row(
             alignment=ft.MainAxisAlignment.START,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -782,71 +787,112 @@ def main(page: ft.Page):
             controls=[
                 ft.Container(
                     width=28, height=28, border_radius=999, bgcolor=bg_color,
-                    alignment=ft.alignment.center,
+                    alignment=ft.alignment.center, padding=0, margin=0,
                     content=ft.Icon(icon_name, size=18, color=icon_color),
                 ),
                 ft.Text(title, size=16, weight=ft.FontWeight.W_600, color=text_color()),
             ],
         )
 
-        cols_head = ft.Container(
-            padding=ft.padding.symmetric(vertical=10, horizontal=12),
-            bgcolor=TOKENS["colors"]["bg"]["surface"]["muted"],
+        # ===== Linhas (DataRow) =====
+        rows_ui = []
+        if not data:
+            rows_ui.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(
+                            ft.Container(
+                                content=ft.Text("Nenhum registro.", color=text_muted()),
+                                alignment=ft.alignment.center,
+                                expand=True,
+                                padding=0, margin=0,
+                            ),
+                            colspan=6,
+                        )
+                    ]
+                )
+            )
+        else:
+            for ata in data:
+                rows_ui.append(
+                    ft.DataRow(
+                        cells=[
+                            ft.DataCell(ft.Container(ft.Text(ata.get("numero",""),     color=text_color()), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
+                            ft.DataCell(ft.Container(ft.Text(ata.get("vigencia",""),   color=text_muted()), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
+                            ft.DataCell(ft.Container(ft.Text(ata.get("objeto",""),     color=text_muted()), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
+                            ft.DataCell(ft.Container(ft.Text(ata.get("fornecedor",""), color=text_muted()), alignment=ft.alignment.center, expand=True, padding=0, margin=0)),
+                            ft.DataCell(
+                                ft.Container(
+                                    content=badge(ata["situacao"], situacao_to_variant(ata["situacao"]), size="md"),
+                                    alignment=ft.alignment.center,
+                                    expand=True,
+                                    padding=0, margin=0,
+                                )
+                            ),
+                            # === AÇÕES sem margem/padding (troca de IconButton -> Container clicável)
+                            ft.DataCell(
+                                ft.Container(
+                                    alignment=ft.alignment.center,
+                                    expand=True,
+                                    padding=0, margin=0,
+                                    content=ft.Row(
+                                        tight=True,                          # ocupa só o necessário
+                                        spacing=6,                           # apenas espaço entre ícones
+                                        alignment=ft.MainAxisAlignment.CENTER,
+                                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                        controls=[
+                                            action_icon("visibility", "Ver",    lambda e, a=ata: show_ata_details(a)),
+                                            action_icon("edit",       "Editar", lambda e, a=ata: show_ata_edit(a)),
+                                            action_icon("delete",     "Excluir", lambda e, a=ata: show_confirm_delete_modal(a),
+                                                        color=TOKENS["colors"]["semantic"]["error"]["icon"]),
+                                        ],
+                                    ),
+                                )
+                            ),
+                        ]
+                    )
+                )
+
+        # ===== DataTable (sem margens, cabeçalhos centralizados) =====
+        table = ft.DataTable(
+            expand=True,
+            column_spacing=16,                 # espaço ENTRE colunas; não é margem lateral
+            horizontal_margin=0,               # zera margem da tabela
+            checkbox_horizontal_margin=0,      # zera margem da col. de checkbox (mesmo não usando)
+            heading_row_color=TOKENS["colors"]["bg"]["surface"]["muted"],
+            vertical_lines=ft.BorderSide(1.5, border_token()),
+            horizontal_lines=ft.BorderSide(BORDER_WIDTH, border_token()),
+            border=ft.border.all(BORDER_WIDTH, border_token()),
             border_radius=8,
-            content=ft.Row(
-                spacing=8,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
+            columns=[
+                ft.DataColumn(ft.Text("NÚMERO",    size=11, color=text_muted(), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER, numeric=False),
+                ft.DataColumn(ft.Text("VIGÊNCIA",   size=11, color=text_muted(), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER, numeric=False),
+                ft.DataColumn(ft.Text("OBJETO",     size=11, color=text_muted(), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER, numeric=False),
+                ft.DataColumn(ft.Text("FORNECEDOR", size=11, color=text_muted(), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER, numeric=False),
+                ft.DataColumn(ft.Text("SITUAÇÃO",   size=11, color=text_muted(), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER, numeric=False),
+                ft.DataColumn(ft.Text("AÇÕES",      size=11, color=text_muted(), weight=ft.FontWeight.W_600), heading_row_alignment=ft.MainAxisAlignment.CENTER, numeric=False),
+            ],
+            rows=rows_ui,
+        )
+
+        # ===== Container do card =====
+        return ft.Container(
+            col=12,
+            bgcolor=surface_bg(),
+            border_radius=16,
+            padding=16,
+            shadow=ft.BoxShadow(blur_radius=16, spread_radius=1, color=TOKENS["colors"]["shadow"]["soft"]),
+            content=ft.Column(
+                spacing=10,
                 controls=[
-                    ft.Container(ft.Text("NÚMERO", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center), vsep(),
-                    ft.Container(ft.Text("VIGÊNCIA", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center), vsep(),
-                    ft.Container(ft.Text("OBJETO", size=11, color=text_muted()), expand=3, alignment=ft.alignment.center), vsep(),
-                    ft.Container(ft.Text("FORNECEDOR", size=11, color=text_muted()), expand=3, alignment=ft.alignment.center), vsep(),
-                    ft.Container(ft.Text("SITUAÇÃO", size=11, color=text_muted()), expand=2, alignment=ft.alignment.center), vsep(),
-                    ft.Container(ft.Text("AÇÕES", size=11, color=text_muted()), width=140, alignment=ft.alignment.center),
+                    header,
+                    ft.Row(controls=[table], expand=True),
                 ],
             ),
         )
 
-        rows_ui = []
-        for ata in data:
-            rows_ui.append(
-                ft.Container(
-                    padding=ft.padding.symmetric(vertical=14, horizontal=12),
-                    content=ft.Row(
-                        spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                        controls=[
-                            ft.Container(ft.Text(ata.get("numero", ""), color=text_color()), expand=2, alignment=ft.alignment.center), vsep(24),
-                            ft.Container(ft.Text(ata.get("vigencia", ""), color=text_muted()), expand=2, alignment=ft.alignment.center), vsep(24),
-                            ft.Container(ft.Text(ata.get("objeto", ""), color=text_muted()), expand=3, alignment=ft.alignment.center), vsep(24),
-                            ft.Container(ft.Text(ata.get("fornecedor", ""), color=text_muted()), expand=3, alignment=ft.alignment.center), vsep(24),
-                            ft.Container(badge(ata["situacao"], situacao_to_variant(ata["situacao"]), size="md"), expand=2, alignment=ft.alignment.center), vsep(24),
-                            ft.Container(
-                                alignment=ft.alignment.center, width=140,
-                                content=ft.Row(
-                                    spacing=6, alignment=ft.MainAxisAlignment.CENTER,
-                                    controls=[
-                                        ft.IconButton(icon="visibility", tooltip="Ver", on_click=lambda e, a=ata: show_ata_details(a)),
-                                        ft.IconButton(icon="edit", tooltip="Editar", on_click=lambda e, a=ata: show_ata_edit(a)),
-                                        ft.IconButton(
-                                            icon="delete", tooltip="Excluir", icon_color=TOKENS["colors"]["semantic"]["error"]["icon"],
-                                            on_click=lambda e, a=ata: show_confirm_delete_modal(a),
-                                        ),
-                                    ],
-                                ),
-                            ),
-                        ],
-                    ),
-                )
-            )
 
-        return ft.Container(
-            col=12, bgcolor=surface_bg(), border_radius=16, padding=16,
-            shadow=ft.BoxShadow(blur_radius=16, spread_radius=1, color=TOKENS["colors"]["shadow"]["soft"]),
-            content=ft.Column(
-                spacing=10,
-                controls=[header, cols_head, *rows_ui] if data else [header, ft.Text("Nenhum registro.", color=text_muted())],
-            ),
-        )
 
     def _filters_count() -> int:
         return sum(state["filters"].values())
@@ -1050,6 +1096,7 @@ def main(page: ft.Page):
             ft.Container(content=forn, col={"xs": 12, "lg": 6}),
         ])
 
+        # (Tabela de itens mantém DataTable anterior)
         it_cols = [
             ft.DataColumn(ft.Text("Descrição", color=text_muted())),
             ft.DataColumn(ft.Text("Qtd.", color=text_muted())),
@@ -1072,8 +1119,8 @@ def main(page: ft.Page):
                 ft.Container(
                     padding=ft.padding.only(top=12),
                     content=ft.Row(controls=[ft.Text("Valor Total", weight=ft.FontWeight.W_600, color=text_muted()),
-                                             ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
-                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                                            ft.Text(ata["valorTotal"], weight=ft.FontWeight.W_600, color=text_muted())],
+                                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                 ),
             ], spacing=10),
         )
@@ -1287,10 +1334,8 @@ def main(page: ft.Page):
     # ==============================
     # ASIDE (MENU)
     # ==============================
-    # -- [ALTERADO] Usa o novo token "logo" --
     top_logo = ft.Container(height=56, alignment=ft.alignment.center, content=ft.Icon("diamond", size=ICON_SIZE, color=TOKENS["colors"]["component"]["sidebar"]["icon"]["logo"]), padding=ft.padding.only(top=8, bottom=8))
     
-    # -- [ALTERADO] Usa o novo token "menu" para a cor inicial --
     menu_icon = ft.Icon(
         "menu",
         size=ICON_SIZE,
@@ -1324,7 +1369,6 @@ def main(page: ft.Page):
         spacing=8, expand=True, scroll=ft.ScrollMode.AUTO,
     )
 
-    # -- [ALTERADO] Usa o novo token "theme" para a cor inicial --
     theme_icon = ft.Icon("dark_mode", size=ICON_SIZE, color=TOKENS["colors"]["component"]["sidebar"]["icon"]["theme"]["light"])
     theme_text = ft.Text("Modo Escuro", size=13, weight=ft.FontWeight.W_600, no_wrap=True, opacity=0)
     theme_text_box = ft.Container(
