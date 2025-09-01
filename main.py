@@ -15,42 +15,42 @@ import database as db
 TOKENS = {
     "colors": {
         "base": {
-            "black": ft.Colors.BLACK, # Cor base para opacidades (sombras/divisores)
+            "black":  ft.Colors.BLACK, # Cor base para opacidades (sombras/divisores)
         },
         "bg": {
             "app": {
-                "light": ft.Colors.GREY_100,      # Fundo global da aplicação (modo claro)
+                "light":  ft.Colors.GREY_100,      # Fundo global da aplicação (modo claro)
                 "dark": "#0f172a",          # Fundo global da aplicação (modo escuro) - slate-900
             },
             "surface": {
-                "light": ft.Colors.WHITE,         # Fundo de cards e superfícies (modo claro)
-                "dark": ft.Colors.with_opacity (0.5,"#1e293b"),       # Fundo de cards e superfícies (modo escuro) - slate-800
-                "muted": ft.Colors.with_opacity(0.2, ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
+                "light":  ft.Colors.WHITE,         # Fundo de cards e superfícies (modo claro)
+                "dark":  ft.Colors.with_opacity (0.5,"#1e293b"),       # Fundo de cards e superfícies (modo escuro) - slate-800
+                "muted":  ft.Colors.with_opacity(0.2,  ft.Colors.BLACK), # Fundo de cabeçalhos de tabela
             },
             "input": {
-                "default": ft.Colors.with_opacity(0.04, ft.Colors.BLACK), # Fundo do campo de busca
+                "default":  ft.Colors.with_opacity(0.04,  ft.Colors.BLACK), # Fundo do campo de busca
             },
         },
         "text": {
             "primary": {
-                "light": ft.Colors.GREY_900,      # Cor de texto principal (modo claro)
+                "light":  ft.Colors.GREY_900,      # Cor de texto principal (modo claro)
                 "dark": "#f1f5f9",          # Cor de texto principal (modo escuro) - slate-100
             },
             "muted": {
-                "light": ft.Colors.GREY_800,      # Cor de texto secundário/silenciado (modo claro)
+                "light":  ft.Colors.GREY_800,      # Cor de texto secundário/silenciado (modo claro)
                 "dark": "#cbd5e1",          # Cor de texto secundário/silenciado (modo escuro) - slate-300
             },
-            "inverse": ft.Colors.WHITE,          # Cor de texto sobre fundos coloridos/escuros
+            "inverse":  ft.Colors.WHITE,          # Cor de texto sobre fundos coloridos/escuros
         },
         "border": {
             "default": {
-                "light": ft.Colors.GREY_300,      # Cor de borda padrão (modo claro)
+                "light":  ft.Colors.GREY_300,      # Cor de borda padrão (modo claro)
                 "dark": "#334155",          # Cor de borda padrão (modo escuro) - slate-700
             }
         },
         "divider": {
             "default": {
-                "light": ft.Colors.with_opacity(0.08, ft.Colors.BLACK), # Cor de divisores (modo claro)
+                "light":  ft.Colors.with_opacity(0.08,  ft.Colors.BLACK), # Cor de divisores (modo claro)
                 "dark":  "#334155",  # Cor de divisores (modo escuro) - slate-700
             },
         },
@@ -62,7 +62,7 @@ TOKENS = {
         "component": {
             "sidebar": {
                 "bg": {
-                    "light": ft.Colors.WHITE,   # Fundo da sidebar (modo claro)
+                    "light":  ft.Colors.WHITE,   # Fundo da sidebar (modo claro)
                     "dark": "#1e293b",    # Fundo da sidebar (modo escuro) - slate-800
                 },
                 "active": {
@@ -76,21 +76,21 @@ TOKENS = {
                     },
                     "text": {
                         "light": "#6D28D9",      # Texto/ícone do item ativo (modo claro)
-                        "dark": ft.Colors.WHITE,       # Texto/ícone do item ativo (modo escuro)
+                        "dark":  ft.Colors.WHITE,       # Texto/ícone do item ativo (modo escuro)
                     },
                 },
                 "icon": {
                     "logo": "#EDE9FE", # Cor do ícone do logo (diamond)
                     "menu": {              # Cor do ícone do menu (hambúrguer)
-                        "light": ft.Colors.GREY_800,
+                        "light":  ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
                     "inactive": {              # Cor dos ícones de navegação inativos
-                        "light": ft.Colors.GREY_800,
+                        "light":  ft.Colors.GREY_800,
                         "dark": "#EDE9FE"  # slate-400
                     },
                     "theme": {              # Cor do ícone de alternar tema
-                        "light": ft.Colors.GREY_600,
+                        "light":  ft.Colors.GREY_600,
                         "dark": "#EDE9FE"  # slate-400
                     }
                 },
@@ -98,33 +98,33 @@ TOKENS = {
         },
         "semantic": {
             "success": {
-                "bg": ft.Colors.GREEN_700,      # Fundo para snackbar de sucesso
+                "bg":  ft.Colors.GREEN_700,      # Fundo para snackbar de sucesso
             },
             "error": {
-                "bg": ft.Colors.RED_700,        # Fundo para snackbar de erro
-                "bg_strong": ft.Colors.RED,       # Fundo para botões de exclusão
-                "icon": ft.Colors.RED_400,        # Ícone de exclusão
+                "bg":  ft.Colors.RED_700,        # Fundo para snackbar de erro
+                "bg_strong":  ft.Colors.RED,       # Fundo para botões de exclusão
+                "icon":  ft.Colors.RED_400,        # Ícone de exclusão
             },
             "warning": {
                 "bg": {
-                    "light": ft.Colors.AMBER_100, # Fundo do card de aviso (modo claro)
-                    "dark": ft.Colors.AMBER_900,  # Fundo do card de aviso (modo escuro)
+                    "light":  ft.Colors.AMBER_100, # Fundo do card de aviso (modo claro)
+                    "dark":  ft.Colors.AMBER_900,  # Fundo do card de aviso (modo escuro)
                 },
-                "border": ft.Colors.AMBER,        # Borda e ícone do card de aviso
+                "border":  ft.Colors.AMBER,        # Borda e ícone do card de aviso
             },
         },
         "status": {
             "vigente": { # Verde
-                "bg": {"light": ft.Colors.GREEN_100, "dark": ft.Colors.with_opacity(0.1, "#4ade80")},
-                "text": {"light": ft.Colors.GREEN_800, "dark": "#86efac"}, # green-300
+                "bg": {"light":  ft.Colors.GREEN_100, "dark":  ft.Colors.with_opacity(0.1, "#4ade80")},
+                "text": {"light":  ft.Colors.GREEN_800, "dark": "#86efac"}, # green-300
             },
             "a_vencer": { # Âmbar
-                "bg": {"light": ft.Colors.AMBER_50, "dark": ft.Colors.with_opacity(0.1, "#facc15")},
-                "text": {"light": ft.Colors.AMBER_900, "dark": "#facc15"}, # yellow-400
+                "bg": {"light":  ft.Colors.AMBER_50, "dark":  ft.Colors.with_opacity(0.1, "#facc15")},
+                "text": {"light":  ft.Colors.AMBER_900, "dark": "#facc15"}, # yellow-400
             },
             "vencida": { # Vermelho
-                "bg": {"light": ft.Colors.RED_100, "dark": ft.Colors.with_opacity(0.1, "#f87171")},
-                "text": {"light": ft.Colors.RED_800, "dark": "#fca5a5"}, # red-300
+                "bg": {"light":  ft.Colors.RED_100, "dark":  ft.Colors.with_opacity(0.1, "#f87171")},
+                "text": {"light":  ft.Colors.RED_800, "dark": "#fca5a5"}, # red-300
             },
         },
         "chart": {
@@ -137,10 +137,10 @@ TOKENS = {
             },
         },
         "shadow": {
-            "strong": ft.Colors.with_opacity(0.15, ft.Colors.BLACK),
-            "default": ft.Colors.with_opacity(0.12, ft.Colors.BLACK),
-            "soft": ft.Colors.with_opacity(0.10, ft.Colors.BLACK),
-            "faint": ft.Colors.with_opacity(0.08, ft.Colors.BLACK),
+            "strong":  ft.Colors.with_opacity(0.15,  ft.Colors.BLACK),
+            "default":  ft.Colors.with_opacity(0.12,  ft.Colors.BLACK),
+            "soft":  ft.Colors.with_opacity(0.10,  ft.Colors.BLACK),
+            "faint":  ft.Colors.with_opacity(0.08,  ft.Colors.BLACK),
         },
     }
 }
@@ -902,10 +902,11 @@ def main(page: ft.Page):
         return f"Filtrar ({n})" if n else "Filtrar"
 
     def AtasPage():
-        # ----- helper: botão redondo com ícone -----
+        # ----- helper: botão redondo com ícone (hover/ink 100% circulares) -----
         def round_icon_button(icon_name: str, tooltip: str, on_click=None):
             return ft.Container(
-                width=40, height=40,
+                width=40,
+                height=40,
                 alignment=ft.alignment.center,
                 border_radius=999,
                 bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
@@ -914,13 +915,19 @@ def main(page: ft.Page):
                 ink=True,
                 on_click=on_click,
                 tooltip=tooltip,
+                # ADICIONE ESTA LINHA TAMBÉM AQUI:
+                clip_behavior=ft.ClipBehavior.HARD_EDGE,
             )
 
         input_padding = ft.padding.symmetric(vertical=0, horizontal=PILL["md"]["px"])
         search = tf(
-            hint_text="Buscar atas...", prefix_icon=ft.Icons.SEARCH,
-            border_radius=BORDER_RADIUS_PILL, content_padding=input_padding,
-            bgcolor=TOKENS["colors"]["bg"]["input"]["default"], height=PILL["md"]["h"], expand=True,
+            hint_text="Buscar atas...",
+            prefix_icon=ft.Icons.SEARCH,
+            border_radius=BORDER_RADIUS_PILL,
+            content_padding=input_padding,
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
+            height=PILL["md"]["h"],
+            expand=True,
         )
 
         def _on_search(e):
@@ -931,66 +938,146 @@ def main(page: ft.Page):
 
         _refresh_data(state["filters"], search.value or None)
 
-        cb_vigente = ft.Checkbox(label="Vigentes", value=state["filters"]["vigente"])
-        cb_vencida = ft.Checkbox(label="Vencidas", value=state["filters"]["vencida"])
-        cb_a_vencer = ft.Checkbox(label="A Vencer", value=state["filters"]["a_vencer"])
+        # ====== PopupMenuButton (substitui MenuAnchor do botão de filtro) ======
+        pb_ref: ft.Ref[ft.PopupMenuButton] = ft.Ref[ft.PopupMenuButton]()
 
-        def _sync_checkboxes():
-            cb_vigente.value = state["filters"]["vigente"]
-            cb_vencida.value = state["filters"]["vencida"]
-            cb_a_vencer.value = state["filters"]["a_vencer"]
-            cb_vigente.update(); cb_vencida.update(); cb_a_vencer.update()
+        def _update_pb_tooltip():
+            if pb_ref.current:
+                pb_ref.current.tooltip = _filter_label()
+                pb_ref.current.update()
 
-        def _toggle_specific(key: str, val: bool):
-            state["filters"][key] = bool(val)
-
-        cb_vigente.on_change = lambda e: _toggle_specific("vigente", e.control.value)
-        cb_vencida.on_change = lambda e: _toggle_specific("vencida", e.control.value)
-        cb_a_vencer.on_change = lambda e: _toggle_specific("a_vencer", e.control.value)
-
-        def _on_filter_clear(_=None):
-            state["filters"] = {key: False for key in FILTER_KEYS}
-            _sync_checkboxes()
-
-        def _on_filter_apply(_=None):
+        def _apply_filters_and_refresh():
             _refresh_data(state["filters"], search.value or None)
+            _update_pb_tooltip()
             set_content(AtasPage())
 
-        menu_box = ft.Container(
-            bgcolor=surface_bg(), border=ft.border.all(1, border_token()),
-            border_radius=16, padding=12, width=280,
-            content=ft.Column(
-                tight=True, spacing=8,
-                controls=[
-                    cb_vigente, cb_vencida, cb_a_vencer, ft.Container(height=8),
-                    ft.Row(
-                        alignment=ft.MainAxisAlignment.END, spacing=8,
-                        controls=[
-                            pill_button("Limpar", variant="text", size="sm", on_click=_on_filter_clear),
-                            pill_button("Aplicar", variant="filled", size="sm", icon="done", on_click=_on_filter_apply),
-                        ],
-                    ),
-                ],
+        # Handlers de toggle para cada item de filtro
+        def toggle_vigente(e):
+            state["filters"]["vigente"] = not state["filters"]["vigente"]
+            e.control.checked = state["filters"]["vigente"]
+            page.update()
+            _update_pb_tooltip()
+
+        def toggle_vencida(e):
+            state["filters"]["vencida"] = not state["filters"]["vencida"]
+            e.control.checked = state["filters"]["vencida"]
+            page.update()
+            _update_pb_tooltip()
+
+        def toggle_a_vencer(e):
+            state["filters"]["a_vencer"] = not state["filters"]["a_vencer"]
+            e.control.checked = state["filters"]["a_vencer"]
+            page.update()
+            _update_pb_tooltip()
+
+        # --- ITENS DO POPUP CENTRALIZADOS ---
+        pm_vigente = ft.PopupMenuItem(
+            checked=state["filters"]["vigente"],
+            on_click=toggle_vigente,
+            content=ft.Row(
+                controls=[ft.Icon(ft.Icons.CHECK_CIRCLE, size=18), ft.Text("Vigentes")],
+                alignment=ft.MainAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=8,
+            ),
+        )
+        pm_vencida = ft.PopupMenuItem(
+            checked=state["filters"]["vencida"],
+            on_click=toggle_vencida,
+            content=ft.Row(
+                controls=[ft.Icon(ft.Icons.CANCEL, size=18), ft.Text("Vencidas")],
+                alignment=ft.MainAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=8,
+            ),
+        )
+        pm_a_vencer = ft.PopupMenuItem(
+            checked=state["filters"]["a_vencer"],
+            on_click=toggle_a_vencer,
+            content=ft.Row(
+                controls=[ft.Icon(ft.Icons.SCHEDULE, size=18), ft.Text("A Vencer")],
+                alignment=ft.MainAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=8,
+            ),
+        )
+        def _on_filter_clear(e):
+            state["filters"] = {key: False for key in FILTER_KEYS}
+            pm_vigente.checked = False
+            pm_vencida.checked = False
+            pm_a_vencer.checked = False
+            page.update()
+            _update_pb_tooltip()
+
+        def _on_filter_apply(e):
+            _apply_filters_and_refresh()
+
+        pm_apply = ft.PopupMenuItem(
+            on_click=_on_filter_apply,
+            content=ft.Row(
+                controls=[ft.Icon(ft.Icons.DONE, size=18), ft.Text("Aplicar")],
+                alignment=ft.MainAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=8,
+            ),
+        )
+        pm_clear = ft.PopupMenuItem(
+            on_click=_on_filter_clear,
+            content=ft.Row(
+                controls=[ft.Icon(ft.Icons.CLEAR_ALL, size=18), ft.Text("Limpar")],
+                alignment=ft.MainAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=8,
             ),
         )
 
-        # --- botões circulares ---
-        filter_btn = ft.SubmenuButton(
-            content=round_icon_button("filter_list", "Filtrar"),
-            controls=[ft.MenuItemButton(close_on_click=False, content=menu_box)],
+# --- BOTÃO DE FILTRO COM HOVER CIRCULAR (usa icon=, não content=) ---
+        filter_btn = ft.Container(
+            width=40,
+            height=40,
+            alignment=ft.alignment.center,
+            border_radius=999,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,  # mantém o visual do círculo
+            border=ft.border.all(BORDER_WIDTH, border_token()),
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
+            content=ft.PopupMenuButton(
+                ref=pb_ref,
+                tooltip=_filter_label(),
+                items=[
+                    pm_vigente,
+                    pm_vencida,
+                    pm_a_vencer,
+                    ft.PopupMenuItem(),  # divisor
+                    pm_apply,
+                    pm_clear,
+                ],
+                # <- ESTE é o ponto: usar 'icon' em vez de 'content'
+                icon=ft.Icons.FILTER_LIST,
+                icon_color=text_color(),
+                icon_size=20,
+                padding=ft.padding.all(0),  # 40x40 exato, sem “gordura”
+                splash_radius=20,           # splash/hover circular
+            ),
         )
 
-        sort_btn = round_icon_button("sort", "Ordenar")
 
+
+
+        # --- outros botões circulares (mantidos) ---
+        sort_btn = round_icon_button("sort", "Ordenar")
         new_btn = round_icon_button("add", "Nova Ata", on_click=lambda _: show_ata_edit({}))
 
         actions = ft.Row(
-            controls=[filter_btn, sort_btn, new_btn], spacing=8,
+            controls=[filter_btn, sort_btn, new_btn],  # <- usa filter_btn aqui
+            spacing=8,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
+
         top = ft.Container(
-            bgcolor=surface_bg(), border_radius=16, padding=16,
+            bgcolor=surface_bg(),
+            border_radius=16,
+            padding=16,
             shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=TOKENS["colors"]["shadow"]["faint"]),
             content=ft.Row(
                 controls=[ft.Container(content=search, expand=True), actions],
@@ -1005,9 +1092,9 @@ def main(page: ft.Page):
         cards = []
 
         filter_map = {
-            'vigente': {'title': 'Atas Vigentes', 'icon': 'check_circle', 'data': ATAS['vigentes'], 'variant': 'green'},
-            'vencida': {'title': 'Atas Vencidas', 'icon': 'cancel', 'data': ATAS['vencidas'], 'variant': 'red'},
-            'a_vencer': {'title': 'Atas a Vencer', 'icon': 'schedule', 'data': ATAS['aVencer'], 'variant': 'amber'},
+            'vigente':   {'title': 'Atas Vigentes', 'icon': 'check_circle', 'data': ATAS['vigentes'], 'variant': 'green'},
+            'vencida':   {'title': 'Atas Vencidas', 'icon': 'cancel',       'data': ATAS['vencidas'], 'variant': 'red'},
+            'a_vencer':  {'title': 'Atas a Vencer', 'icon': 'schedule',     'data': ATAS['aVencer'],  'variant': 'amber'},
         }
 
         for key in FILTER_KEYS:
@@ -1016,10 +1103,14 @@ def main(page: ft.Page):
                 cards.append(AtasSectionCard(info['title'], info['icon'], info['data'], variant=info['variant']))
 
         grid = ft.ResponsiveRow(
-            columns=12, spacing=16, run_spacing=16,
+            columns=12,
+            spacing=16,
+            run_spacing=16,
             controls=[ft.Container(content=top, col=12), *cards],
         )
         return grid
+
+
 
     def show_ata_details(ata: dict):
         title = ft.Text("Ata de Registro de Preços", size=20, weight=ft.FontWeight.W_700, color=text_color())
