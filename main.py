@@ -978,13 +978,20 @@ def main(page: ft.Page):
             _update_filter_tooltip()
 
         def _on_filter_clear(e):
-            # Limpar NÃO fecha o menu nem aplica; só zera os checks
+            # Zera os flags
             for k in FILTER_KEYS:
                 state["filters"][k] = False
+
+            # Atualiza os ícones dos itens
             mi_vigente.leading = _check_icon(False); mi_vigente.update()
             mi_vencida.leading = _check_icon(False); mi_vencida.update()
             mi_a_vencer.leading = _check_icon(False); mi_a_vencer.update()
+
             _update_filter_tooltip()
+
+            # APLICA imediatamente após limpar
+            _on_filter_apply(e)
+
 
         def _on_filter_apply(e):
             # Aplicar fecha (close_on_click=True) e ATUALIZA os cards
@@ -1019,12 +1026,14 @@ def main(page: ft.Page):
             content=ft.Text("Aplicar"),
             on_click=_on_filter_apply,
         )
+
         mi_clear = ft.MenuItemButton(
-            close_on_click=False,  # NÃO fecha
+            close_on_click=True,  # <-- antes estava False
             leading=ft.Icon(ft.Icons.CLEAR_ALL, size=18),
             content=ft.Text("Limpar"),
             on_click=_on_filter_clear,
         )
+
         mi_close = ft.MenuItemButton(
             close_on_click=True,  # fecha sem aplicar
             leading=ft.Icon(ft.Icons.CLOSE, size=18),
