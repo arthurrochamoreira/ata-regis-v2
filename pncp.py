@@ -4,7 +4,8 @@ import math
 import requests
 import json
 import threading
-from datetime import datetime
+import calendar
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -13,6 +14,7 @@ from urllib3.util.retry import Retry
 BASE_CONSULTA = "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao"
 BASE_ITENS = "https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/itens"
 HEADERS = {"Accept": "*/*", "User-Agent": "pncp-script-py/1.3"}
+PAUSA_ENTRE_MESES_SEGUNDOS = 120 # Pausa de 2 minutos
 
 # Limites de concorrência
 MAX_WORKERS_PAGES = 20      # threads para páginas
@@ -44,6 +46,32 @@ MODALIDADES = {
 def jloads(b): return json.loads(b.decode('utf-8'))
 def jdumps(d): return json.dumps(d, ensure_ascii=False, indent=2).encode('utf-8')
 
+# Nova função para dividir o período em meses
+def gerar_intervalos_mensais(data_inicial_str: str, data_final_str: str) -> list[tuple[str, str]]:
+    """Gera uma lista de tuplas (data_inicio, data_fim) para cada mês no intervalo."""
+    fmt = "%Y%m%d"
+    start_date = datetime.strptime(data_inicial_str, fmt)
+    end_date = datetime.strptime(data_final_str, fmt)
+    
+    intervalos = []
+    current_date = start_date
+    
+    while current_date <= end_date:
+        _, last_day_of_month = calendar.monthrange(current_date.year, current_date.month)
+        month_start = current_date.replace(day=1)
+        month_end = current_date.replace(day=last_day_of_month)
+        
+        intervalo_start = max(start_date, month_start)
+        intervalo_end = min(end_date, month_end)
+        
+        intervalos.append((intervalo_start.strftime(fmt), intervalo_end.strftime(fmt)))
+        
+        # Avança para o próximo mês
+        next_month_start = (month_end + timedelta(days=1))
+        current_date = next_month_start
+        
+    return intervalos
+
 def parse_id_pncp(id_pncp: str) -> tuple[str, str, str]:
     parts = id_pncp.split("/")
     if len(parts) != 3:
@@ -51,16 +79,11 @@ def parse_id_pncp(id_pncp: str) -> tuple[str, str, str]:
     return parts[0], parts[1], parts[2]
 
 def format_id_pncp_from_numero_controle(raw: str) -> tuple[str | None, str | None]:
-    """
-    Tenta formatar um ID PNCP e link a partir do campo 'numeroControlePncp'.
-    Exemplo de entrada: '01234567000189-1-00001/2024'
-    Saída esperada: ('01234567000189/2024/1', 'https://pncp.gov.br/app/editais/01234567000189/2024/1')
-    """
     try:
         left, ano = raw.split("/")
         cnpj = left.split("-")[0]
         seq_raw = left.split("-")[-1]
-        seq = seq_raw.lstrip("0") or "0" # Remove zeros à esquerda, mas mantém "0" se for o caso
+        seq = seq_raw.lstrip("0") or "0"
         id_pncp = f"{cnpj}/{ano}/{seq}"
         link = f"https://pncp.gov.br/app/editais/{id_pncp}"
         return id_pncp, link
@@ -104,7 +127,7 @@ def build_session():
     return sess
 
 def get_with_backoff(session: requests.Session, url: str, *, params=None,
-                     timeout=DEFAULT_TIMEOUT, max_retries=4):
+                      timeout=DEFAULT_TIMEOUT, max_retries=4):
     attempt = 0
     while True:
         r = session.get(url, params=params, timeout=timeout)
@@ -127,7 +150,7 @@ def get_with_backoff(session: requests.Session, url: str, *, params=None,
 
 # ============================== Consultas de Contratações ==============================
 def fetch_page_with_pagesize(session: requests.Session, pagina: int, data_ini: str, data_fim: str,
-                             modalidade: int, modo: int | None):
+                              modalidade: int, modo: int | None):
     key = (modalidade, modo)
     base_params = {
         "dataInicial": data_ini, "dataFinal": data_fim,
@@ -164,7 +187,7 @@ def fetch_page_with_pagesize(session: requests.Session, pagina: int, data_ini: s
     raise last_err or RuntimeError("Nenhum tamanhoPagina aceito pelo servidor.")
 
 def discover_total_pages_for_modalidade(session: requests.Session, data_ini: str, data_fim: str,
-                                        modalidade: int, modo: int | None):
+                                         modalidade: int, modo: int | None):
     payload = fetch_page_with_pagesize(session, 1, data_ini, data_fim, modalidade, modo)
     total = payload.get("totalPaginas") or payload.get("totalPaginasConsulta") or 1
     dados = payload.get("data", [])
@@ -173,7 +196,7 @@ def discover_total_pages_for_modalidade(session: requests.Session, data_ini: str
     return int(total), dados
 
 def fetch_all_pages_for_modalidade(session: requests.Session, total_pages: int, data_ini: str, data_fim: str,
-                                     modalidade: int, modo: int | None) -> list[dict]:
+                                      modalidade: int, modo: int | None) -> list[dict]:
     if total_pages <= 1:
         return []
     results = []
@@ -190,7 +213,7 @@ def fetch_all_pages_for_modalidade(session: requests.Session, total_pages: int, 
     return results
 
 def fetch_contratacoes_multi_modalidade(session: requests.Session, data_ini: str, data_fim: str,
-                                        modalidades: list[int], modo: int | None) -> list[dict]:
+                                         modalidades: list[int], modo: int | None) -> list[dict]:
     all_contratacoes = []
     discovered = []
     for m in modalidades:
@@ -208,9 +231,6 @@ def fetch_contratacoes_multi_modalidade(session: requests.Session, data_ini: str
 
 # ============================== Itens (paralelismo, sem cache) ==============================
 def itens_pncp_por_id(session: requests.Session, id_pncp: str) -> list[dict]:
-    """
-    Busca e formata os itens de uma compra diretamente da API, sem usar cache.
-    """
     cnpj, ano, seq = parse_id_pncp(id_pncp)
     
     url = BASE_ITENS.format(cnpj=cnpj, ano=ano, seq=seq)
@@ -239,10 +259,11 @@ def itens_pncp_por_id(session: requests.Session, id_pncp: str) -> list[dict]:
             "Detalhar": detalhar,
             "Edital": edital_link
         })
-
     return out
 
 def fetch_itens_para_ids(session: requests.Session, ids_uniq: list[tuple[str, str]]) -> list[dict]:
+    if not ids_uniq:
+        return []
     encontrados = []
     lock = threading.Lock()
 
@@ -264,8 +285,54 @@ def fetch_itens_para_ids(session: requests.Session, ids_uniq: list[tuple[str, st
                 print(f"[ITENS] {idp} -> {len(itens)}")
             except Exception as e:
                 print(f"[WARN] itens falharam {idp}: {e}")
-
     return encontrados
+
+# ============================== Geração de Relatórios ==============================
+def salvar_relatorios(filename_base: str, dados_json: dict, dados_txt: dict):
+    if not dados_json and not dados_txt:
+        print("\n[INFO] Nenhum dado encontrado para gerar relatórios.")
+        return
+
+    # --- Salvar em JSON (TODOS os itens das contratações) ---
+    if not dados_json:
+        print("\n[INFO] Nenhum item bruto encontrado para gerar o arquivo JSON.")
+    else:
+        json_filename = f"{filename_base}.json"
+        try:
+            with open(json_filename, 'w', encoding='utf-8') as f:
+                json.dump(dados_json, f, ensure_ascii=False, indent=4)
+            print(f"\n[OK] Relatório JSON com TODOS os itens salvo em: {json_filename}")
+        except Exception as e:
+            print(f"\n[ERRO] Falha ao salvar relatório JSON: {e}")
+
+    # --- Salvar em TXT (APENAS itens que bateram com a descrição) ---
+    if not dados_txt:
+        print("[INFO] Nenhum item correspondeu à descrição para gerar o relatório TXT.")
+    else:
+        txt_filename = f"{filename_base}.txt"
+        try:
+            with open(txt_filename, 'w', encoding='utf-8') as f:
+                f.write("RELATÓRIO DE ITENS FILTRADOS NO PNCP\n")
+                f.write(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n")
+                
+                for id_pncp, data in dados_txt.items():
+                    f.write("\n============================================================\n")
+                    f.write(f"CONTRATAÇÃO ID: {id_pncp}\n")
+                    f.write(f"Objeto: {data.get('objeto', 'N/A')}\n")
+                    f.write(f"Link: {data.get('link', 'N/A')}\n")
+                    f.write("------------------------------------------------------------\n")
+                    f.write("Itens Encontrados (filtrados por descrição):\n\n")
+
+                    for item in data.get('itens_filtrados', []):
+                        f.write(f"  - Item {item.get('Numero', '?')}:\n")
+                        f.write(f"    Descrição: {item.get('Descricao', 'N/A')}\n")
+                        f.write(f"    Quantidade: {item.get('Quantidade', 'N/A')}\n")
+                        f.write(f"    Valor Unitário Estimado: {item.get('Valor unitario estimado', 'N/A')}\n")
+                        f.write(f"    Valor Total Estimado: {item.get('Valor total estimado', 'N/A')}\n\n")
+            
+            print(f"[OK] Relatório TXT com itens FILTRADOS salvo em: {txt_filename}")
+        except Exception as e:
+            print(f"[ERRO] Falha ao salvar relatório TXT: {e}")
 
 # ============================== MAIN ==============================
 if __name__ == "__main__":
@@ -284,79 +351,88 @@ if __name__ == "__main__":
         modo_raw = input("Código do modo de disputa (opcional, Enter p/ pular): ").strip()
         modo = int(modo_raw) if modo_raw else None
 
-        data_inicial = ask_date("Data inicial (AAAAMMDD): ")
-        data_final   = ask_date("Data final   (AAAAMMDD): ")
+        data_inicial_geral = ask_date("Data inicial GERAL (AAAAMMDD): ")
+        data_final_geral   = ask_date("Data final GERAL   (AAAAMMDD): ")
 
         session = build_session()
 
-        # 1) Coletar contratações de TODAS as modalidades
-        contratacoes = fetch_contratacoes_multi_modalidade(session, data_inicial, data_final, modalidades, modo)
-        print(f"\n[INFO] Contratações coletadas (todas as modalidades): {len(contratacoes)}")
+        # Alteração: Gerar intervalos mensais para a busca
+        intervalos_mensais = gerar_intervalos_mensais(data_inicial_geral, data_final_geral)
+        total_meses = len(intervalos_mensais)
+        print(f"\n[INFO] O período foi dividido em {total_meses} busca(s) mensal(is).")
 
-        # 2) Filtrar por palavra no objeto
-        filtradas = [
-            c for c in contratacoes
-            if palavra_contratacao in (c.get("objetoCompra") or "").lower()
-        ]
-        print(f"[INFO] Contratações após filtro no objeto: {len(filtradas)}")
-
-        # 3) Coletar IDs únicos e mapear para objeto e link da compra
-        ids_uniq = []
-        id_to_info = {}
-        seen_ids = set()
-        for c in filtradas:
-            id_pncp, link = None, None
-            
-            # Tentativa 1: Usar a nova função com numeroControlePncp
-            numero_controle = c.get("numeroControlePncp")
-            if numero_controle:
-                id_pncp, link = format_id_pncp_from_numero_controle(numero_controle)
-
-            # Tentativa 2 (Fallback): Montar manualmente se a primeira falhar
-            if not id_pncp:
-                try:
-                    cnpj = c["orgaoEntidade"]["cnpj"]
-                    ano = c["anoCompra"]
-                    seq = c["sequencialCompra"]
-                    id_pncp = f"{cnpj}/{ano}/{seq}"
-                    link = f"https://pncp.gov.br/app/editais/{id_pncp}"
-                except (KeyError, TypeError):
-                    continue # Pula esta contratação se não tiver os dados mínimos
-
-            # Se conseguimos um ID, adicionamos para processamento
-            if id_pncp and id_pncp not in seen_ids:
-                ids_uniq.append((id_pncp, id_pncp))
-                seen_ids.add(id_pncp)
-                id_to_info[id_pncp] = {
-                    "objeto": (c.get("objetoCompra") or "").strip(),
-                    "link": link
-                }
+        # Alteração: Acumuladores para os resultados de todos os meses
+        id_to_info_geral = {}
+        dados_finais_json = {}
+        dados_finais_txt = {}
         
-        print(f"[INFO] Buscando itens para {len(ids_uniq)} contratações únicas.")
+        # Alteração: Laço principal para iterar sobre cada mês
+        for i, (data_inicial_mes, data_final_mes) in enumerate(intervalos_mensais):
+            print(f"\n{'='*20} BUSCANDO MÊS {i+1}/{total_meses}: {data_inicial_mes} a {data_final_mes} {'='*20}")
 
-        # 4) Buscar itens das contratações (com paralelismo)
-        itens_brutos = fetch_itens_para_ids(session, ids_uniq)
+            # 1) Coletar contratações do MÊS ATUAL
+            contratacoes_mes = fetch_contratacoes_multi_modalidade(session, data_inicial_mes, data_final_mes, modalidades, modo)
+            print(f"\n[INFO] Mês {i+1}: {len(contratacoes_mes)} contratações coletadas.")
 
-        # 5) Filtrar itens por termos (OR via regex)
-        encontrados_finais = []
-        for item in itens_brutos:
-            desc = item.get("Descricao", "")
-            if not termos_re or termos_re.search(desc):
-                encontrados_finais.append(item)
+            # 2) Filtrar por palavra no objeto
+            filtradas_mes = [c for c in contratacoes_mes if palavra_contratacao in (c.get("objetoCompra") or "").lower()]
+            print(f"[INFO] Mês {i+1}: {len(filtradas_mes)} contratações após filtro no objeto.")
 
-        # 6) Saída
-        print("\n--- RESULTADOS ENCONTRADOS ---")
-        for r in encontrados_finais:
-            id_pncp = r['id_pncp']
-            info = id_to_info.get(id_pncp, {"objeto": "?", "link": "Link não encontrado"})
-            objeto = info["objeto"]
-            link = info["link"]
-            print(f"[{id_pncp}] "
-                  f"Item {r['Numero']}: {r['Descricao']} "
-                  f"(Objeto: {objeto})\n"
-                  f" -> Link: {link}\n")
+            # 3) Coletar APENAS IDs NOVOS e mapear para objeto e link
+            ids_novos_neste_mes = []
+            for c in filtradas_mes:
+                id_pncp, link = None, None
+                numero_controle = c.get("numeroControlePncp")
+                if numero_controle: id_pncp, link = format_id_pncp_from_numero_controle(numero_controle)
+                if not id_pncp:
+                    try:
+                        cnpj, ano, seq = c["orgaoEntidade"]["cnpj"], c["anoCompra"], c["sequencialCompra"]
+                        id_pncp, link = f"{cnpj}/{ano}/{seq}", f"https://pncp.gov.br/app/editais/{cnpj}/{ano}/{seq}"
+                    except (KeyError, TypeError): continue
+                
+                # Apenas adiciona se for um ID nunca visto antes
+                if id_pncp and id_pncp not in id_to_info_geral:
+                    id_to_info_geral[id_pncp] = {"objeto": (c.get("objetoCompra") or "").strip(), "link": link}
+                    ids_novos_neste_mes.append(id_pncp)
+            
+            print(f"[INFO] Mês {i+1}: {len(ids_novos_neste_mes)} novas contratações únicas encontradas.")
 
-        print(f"\n[OK] Total de itens encontrados: {len(encontrados_finais)}")
+            # 4) Buscar itens apenas das NOVAS contratações
+            if ids_novos_neste_mes:
+                itens_brutos_mes = fetch_itens_para_ids(session, [(i, i) for i in ids_novos_neste_mes])
+
+                # 5a) ACUMULAR dados para o JSON final
+                for item in itens_brutos_mes:
+                    id_pncp = item['id_pncp']
+                    if id_pncp not in dados_finais_json:
+                        dados_finais_json[id_pncp] = id_to_info_geral.get(id_pncp, {})
+                        dados_finais_json[id_pncp]['todos_os_itens'] = []
+                    dados_finais_json[id_pncp]['todos_os_itens'].append(item)
+
+                # 5b) ACUMULAR dados para o TXT final (apenas itens que batem com a descrição)
+                for item in itens_brutos_mes:
+                    if not termos_re or termos_re.search(item.get("Descricao", "")):
+                        id_pncp = item['id_pncp']
+                        if id_pncp not in dados_finais_txt:
+                            dados_finais_txt[id_pncp] = id_to_info_geral.get(id_pncp, {})
+                            dados_finais_txt[id_pncp]['itens_filtrados'] = []
+                        dados_finais_txt[id_pncp]['itens_filtrados'].append(item)
+            
+            # Alteração: Pausa entre os meses
+            if i < total_meses - 1:
+                print(f"\n[PAUSA] Fim do processamento do mês {i+1}. Pausando por {PAUSA_ENTRE_MESES_SEGUNDOS} segundos...")
+                time.sleep(PAUSA_ENTRE_MESES_SEGUNDOS)
+
+        # 6) Saída: Gerar arquivos de relatório com os DADOS ACUMULADOS
+        print("\n[FINAL] Todos os meses foram processados. Gerando relatórios consolidados...")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        nome_base_relatorio = f"relatorio_pncp_{timestamp}"
+        salvar_relatorios(nome_base_relatorio, dados_finais_json, dados_finais_txt)
+
+        # 7) Imprimir resumo final
+        total_itens_filtrados = sum(len(data.get('itens_filtrados', [])) for data in dados_finais_txt.values())
+        print(f"\n[RESUMO FINAL] Total de contratações com itens correspondentes à descrição: {len(dados_finais_txt)}")
+        print(f"[RESUMO FINAL] Total de itens individuais correspondentes à descrição: {total_itens_filtrados}")
 
     except Exception as e:
-        print(f"[FATAL] {e}")
+        print(f"\n[FATAL] Ocorreu um erro inesperado: {e}")
