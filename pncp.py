@@ -14,7 +14,7 @@ from urllib3.util.retry import Retry
 BASE_CONSULTA = "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao"
 BASE_ITENS = "https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/itens"
 HEADERS = {"Accept": "*/*", "User-Agent": "pncp-script-py/1.3"}
-PAUSA_ENTRE_MESES_SEGUNDOS = 120 # Pausa de 2 minutos
+PAUSA_ENTRE_MESES_SEGUNDOS = 30 # Pausa de 2 minutos
 
 # Limites de concorrência
 MAX_WORKERS_PAGES = 20      # threads para páginas
@@ -46,7 +46,6 @@ MODALIDADES = {
 def jloads(b): return json.loads(b.decode('utf-8'))
 def jdumps(d): return json.dumps(d, ensure_ascii=False, indent=2).encode('utf-8')
 
-# Nova função para dividir o período em meses
 def gerar_intervalos_mensais(data_inicial_str: str, data_final_str: str) -> list[tuple[str, str]]:
     """Gera uma lista de tuplas (data_inicio, data_fim) para cada mês no intervalo."""
     fmt = "%Y%m%d"
@@ -289,10 +288,8 @@ def fetch_itens_para_ids(session: requests.Session, ids_uniq: list[tuple[str, st
 
 # ============================== Geração de Relatórios ==============================
 def salvar_relatorios(filename_base: str, dados_json: dict, dados_txt: dict):
-    if not dados_json and not dados_txt:
-        print("\n[INFO] Nenhum dado encontrado para gerar relatórios.")
-        return
-
+    """Salva os resultados em arquivos .json (todos os itens) e .txt (itens filtrados)."""
+    
     # --- Salvar em JSON (TODOS os itens das contratações) ---
     if not dados_json:
         print("\n[INFO] Nenhum item bruto encontrado para gerar o arquivo JSON.")
@@ -356,17 +353,11 @@ if __name__ == "__main__":
 
         session = build_session()
 
-        # Alteração: Gerar intervalos mensais para a busca
         intervalos_mensais = gerar_intervalos_mensais(data_inicial_geral, data_final_geral)
         total_meses = len(intervalos_mensais)
         print(f"\n[INFO] O período foi dividido em {total_meses} busca(s) mensal(is).")
-
-        # Alteração: Acumuladores para os resultados de todos os meses
-        id_to_info_geral = {}
-        dados_finais_json = {}
-        dados_finais_txt = {}
         
-        # Alteração: Laço principal para iterar sobre cada mês
+        # Alteração: Laço principal agora executa o processo completo por mês.
         for i, (data_inicial_mes, data_final_mes) in enumerate(intervalos_mensais):
             print(f"\n{'='*20} BUSCANDO MÊS {i+1}/{total_meses}: {data_inicial_mes} a {data_final_mes} {'='*20}")
 
@@ -378,8 +369,9 @@ if __name__ == "__main__":
             filtradas_mes = [c for c in contratacoes_mes if palavra_contratacao in (c.get("objetoCompra") or "").lower()]
             print(f"[INFO] Mês {i+1}: {len(filtradas_mes)} contratações após filtro no objeto.")
 
-            # 3) Coletar APENAS IDs NOVOS e mapear para objeto e link
-            ids_novos_neste_mes = []
+            # 3) Coletar IDs únicos DO MÊS e mapear para objeto e link
+            id_to_info_mes = {}
+            ids_do_mes = []
             for c in filtradas_mes:
                 id_pncp, link = None, None
                 numero_controle = c.get("numeroControlePncp")
@@ -390,49 +382,53 @@ if __name__ == "__main__":
                         id_pncp, link = f"{cnpj}/{ano}/{seq}", f"https://pncp.gov.br/app/editais/{cnpj}/{ano}/{seq}"
                     except (KeyError, TypeError): continue
                 
-                # Apenas adiciona se for um ID nunca visto antes
-                if id_pncp and id_pncp not in id_to_info_geral:
-                    id_to_info_geral[id_pncp] = {"objeto": (c.get("objetoCompra") or "").strip(), "link": link}
-                    ids_novos_neste_mes.append(id_pncp)
+                if id_pncp and id_pncp not in id_to_info_mes:
+                    id_to_info_mes[id_pncp] = {"objeto": (c.get("objetoCompra") or "").strip(), "link": link}
+                    ids_do_mes.append(id_pncp)
             
-            print(f"[INFO] Mês {i+1}: {len(ids_novos_neste_mes)} novas contratações únicas encontradas.")
+            print(f"[INFO] Mês {i+1}: {len(ids_do_mes)} contratações únicas encontradas para buscar itens.")
 
-            # 4) Buscar itens apenas das NOVAS contratações
-            if ids_novos_neste_mes:
-                itens_brutos_mes = fetch_itens_para_ids(session, [(i, i) for i in ids_novos_neste_mes])
+            # 4) Buscar itens das contratações DO MÊS
+            itens_brutos_mes = fetch_itens_para_ids(session, [(i, i) for i in ids_do_mes])
 
-                # 5a) ACUMULAR dados para o JSON final
-                for item in itens_brutos_mes:
-                    id_pncp = item['id_pncp']
-                    if id_pncp not in dados_finais_json:
-                        dados_finais_json[id_pncp] = id_to_info_geral.get(id_pncp, {})
-                        dados_finais_json[id_pncp]['todos_os_itens'] = []
-                    dados_finais_json[id_pncp]['todos_os_itens'].append(item)
+            # 5a) Preparar dados para o JSON DO MÊS
+            dados_para_json_mes = {}
+            for item in itens_brutos_mes:
+                id_pncp = item['id_pncp']
+                if id_pncp not in dados_para_json_mes:
+                    dados_para_json_mes[id_pncp] = id_to_info_mes.get(id_pncp, {})
+                    dados_para_json_mes[id_pncp]['todos_os_itens'] = []
+                dados_para_json_mes[id_pncp]['todos_os_itens'].append(item)
 
-                # 5b) ACUMULAR dados para o TXT final (apenas itens que batem com a descrição)
-                for item in itens_brutos_mes:
-                    if not termos_re or termos_re.search(item.get("Descricao", "")):
-                        id_pncp = item['id_pncp']
-                        if id_pncp not in dados_finais_txt:
-                            dados_finais_txt[id_pncp] = id_to_info_geral.get(id_pncp, {})
-                            dados_finais_txt[id_pncp]['itens_filtrados'] = []
-                        dados_finais_txt[id_pncp]['itens_filtrados'].append(item)
-            
-            # Alteração: Pausa entre os meses
+            # 5b) Preparar dados para o TXT DO MÊS
+            itens_filtrados_mes = [item for item in itens_brutos_mes if not termos_re or termos_re.search(item.get("Descricao", ""))]
+            dados_para_txt_mes = {}
+            for item in itens_filtrados_mes:
+                id_pncp = item['id_pncp']
+                if id_pncp not in dados_para_txt_mes:
+                    dados_para_txt_mes[id_pncp] = id_to_info_mes.get(id_pncp, {})
+                    dados_para_txt_mes[id_pncp]['itens_filtrados'] = []
+                dados_para_txt_mes[id_pncp]['itens_filtrados'].append(item)
+
+            # 6) Saída: Gerar arquivos de relatório PARA O MÊS ATUAL
+            if dados_para_json_mes or dados_para_txt_mes:
+                mes_ano_str = datetime.strptime(data_inicial_mes, "%Y%m%d").strftime("%Y-%m")
+                nome_base_relatorio = f"relatorio_pncp_{mes_ano_str}"
+                salvar_relatorios(nome_base_relatorio, dados_para_json_mes, dados_para_txt_mes)
+            else:
+                print(f"\n[INFO] Nenhum item encontrado no mês {i+1} para gerar relatórios.")
+
+            # 7) Imprimir resumo DO MÊS
+            total_itens_filtrados_mes = len(itens_filtrados_mes)
+            print(f"\n[RESUMO DO MÊS {i+1}] Contratações com itens filtrados: {len(dados_para_txt_mes)}")
+            print(f"[RESUMO DO MÊS {i+1}] Itens individuais filtrados: {total_itens_filtrados_mes}")
+
+            # 8) Pausa antes do próximo mês
             if i < total_meses - 1:
                 print(f"\n[PAUSA] Fim do processamento do mês {i+1}. Pausando por {PAUSA_ENTRE_MESES_SEGUNDOS} segundos...")
                 time.sleep(PAUSA_ENTRE_MESES_SEGUNDOS)
 
-        # 6) Saída: Gerar arquivos de relatório com os DADOS ACUMULADOS
-        print("\n[FINAL] Todos os meses foram processados. Gerando relatórios consolidados...")
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        nome_base_relatorio = f"relatorio_pncp_{timestamp}"
-        salvar_relatorios(nome_base_relatorio, dados_finais_json, dados_finais_txt)
-
-        # 7) Imprimir resumo final
-        total_itens_filtrados = sum(len(data.get('itens_filtrados', [])) for data in dados_finais_txt.values())
-        print(f"\n[RESUMO FINAL] Total de contratações com itens correspondentes à descrição: {len(dados_finais_txt)}")
-        print(f"[RESUMO FINAL] Total de itens individuais correspondentes à descrição: {total_itens_filtrados}")
+        print("\n[FINAL] Processo concluído para todos os meses.")
 
     except Exception as e:
         print(f"\n[FATAL] Ocorreu um erro inesperado: {e}")
