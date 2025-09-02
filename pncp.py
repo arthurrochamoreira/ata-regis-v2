@@ -14,7 +14,7 @@ from urllib3.util.retry import Retry
 # ============================== Configs ==============================
 BASE_CONSULTA = "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao"
 BASE_ITENS = "https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/itens"
-HEADERS = {"Accept": "*/*", "User-Agent": "pncp-script-py/1.5"}
+HEADERS = {"Accept": "*/*", "User-Agent": "pncp-script-py/1.6"}
 PAUSA_ENTRE_MESES_SEGUNDOS = 30  # Pausa entre meses
 
 # Limites de concorrência
@@ -23,7 +23,7 @@ MAX_WORKERS_ITENS = 32      # threads para itens
 CONC_ITENS = threading.Semaphore(MAX_WORKERS_ITENS)  # controle de paralelismo para itens
 
 # Tentativas de tamanho de página (ordem de teste) e cache por (modalidade, modo)
-PAGE_SIZE_CANDIDATES = [500, 200, 100, 50, None]
+PAGE_SIZE_CANDIDATES = [50]
 PAGE_SIZE_CACHE: dict[tuple[int, int | None], int | None] = {}
 
 # Timeouts e retries
@@ -43,22 +43,8 @@ MODALIDADES = {
     12: "Credenciamento", 13: "Leilão – Presencial",
 }
 
-# Mapas amigáveis (não obrigatórios; se não houver mapeamento, mostra o código cru)
-PODER_MAP = {
-    "E": "Executivo",
-    "L": "Legislativo",
-    "J": "Judiciário",
-    "M": "Ministério Público",
-    "D": "Defensoria Pública",
-    "T": "Tribunais de Contas",
-    "N": "Município",  # costuma aparecer para Prefeitura
-}
-ESFERA_MAP = {
-    "U": "União",
-    "E": "Estadual",
-    "M": "Municipal",
-    "D": "Distrito Federal",
-}
+PODER_MAP = {"E":"Executivo","L":"Legislativo","J":"Judiciário","M":"Ministério Público","D":"Defensoria Pública","T":"Tribunais de Contas","N":"Município"}
+ESFERA_MAP = {"U":"União","E":"Estadual","M":"Municipal","D":"Distrito Federal"}
 
 # ============================== Utilidades ==============================
 def jloads(b):
@@ -68,21 +54,30 @@ def jdumps(d):
     return json.dumps(d, ensure_ascii=False, indent=2).encode('utf-8')
 
 def _fmt_date(v):
-    """Formata datas conhecidas; se não houver valor, retorna None (para não imprimir)."""
+    """Formata datas no padrão DD/MM/AAAA ou DD/MM/AAAA HH:MM, conforme o valor."""
     if not v:
         return None
     s = str(v)
-    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%d"):
+
+    formatos = [
+        ("%Y-%m-%dT%H:%M:%S.%f", "%d/%m/%Y %H:%M"),
+        ("%Y-%m-%dT%H:%M:%S",    "%d/%m/%Y %H:%M"),
+        ("%Y-%m-%d %H:%M:%S",    "%d/%m/%Y %H:%M"),
+        ("%Y-%m-%d",             "%d/%m/%Y"),
+    ]
+    for fmt_in, fmt_out in formatos:
         try:
-            return datetime.strptime(s[:len(fmt)], fmt).strftime("%d/%m/%Y")
+            return datetime.strptime(s[:len(fmt_in)], fmt_in).strftime(fmt_out)
         except Exception:
             pass
-    if re.fullmatch(r"\d{8}", s):
+
+    if re.fullmatch(r"\d{8}", s):  # ex.: 20240916
         try:
             return datetime.strptime(s, "%Y%m%d").strftime("%d/%m/%Y")
         except Exception:
             pass
-    return s  # retorna cru se não reconhecido
+
+    return s  # se nada casar, retorna o original
 
 def _get(d, *paths, default=None):
     for p in paths:
@@ -105,9 +100,9 @@ def gerar_intervalos_mensais(data_inicial_str: str, data_final_str: str) -> list
     intervalos = []
     current_date = start_date
     while current_date <= end_date:
-        _, last_day_of_month = calendar.monthrange(current_date.year, current_date.month)
+        _, last_day = calendar.monthrange(current_date.year, current_date.month)
         month_start = current_date.replace(day=1)
-        month_end = current_date.replace(day=last_day_of_month)
+        month_end = current_date.replace(day=last_day)
         intervalo_start = max(start_date, month_start)
         intervalo_end = min(end_date, month_end)
         intervalos.append((intervalo_start.strftime(fmt), intervalo_end.strftime(fmt)))
@@ -190,84 +185,59 @@ def get_with_backoff(session: requests.Session, url: str, *, params=None,
             pass
         raise requests.HTTPError(f"HTTP {r.status_code} em {r.url}\n{body}")
 
-# ------------------------- Metadados da contratação (apenas o que a API entrega) -------------------------
+# ------------------------- Metadados da contratação -------------------------
 def extract_contratacao_meta(c: dict) -> dict:
-    """
-    Extrai SOMENTE campos que existem no endpoint /consulta/v1/contratacoes/publicacao,
-    sem inventar chaves e sem colocar 'N/D'. Campos ausentes simplesmente não entram.
-    Agora inclui: razaoSocial, cnpj, poderId, esferaId (com rótulos).
-    """
+    """Extrai campos existentes na /consulta/v1/contratacoes/publicacao, sem inventar chaves."""
     meta: dict = {}
 
-    # --- Órgão / Entidade (orgaoEntidade) ---
     org = c.get("orgaoEntidade") or {}
     if isinstance(org, dict):
         razao = org.get("razaosocial") or org.get("razaoSocial")
-        if razao:
-            meta["Órgão"] = razao
-
+        if razao: meta["Órgão"] = razao
         cnpj_org = org.get("cnpj")
-        if cnpj_org:
-            meta["CNPJ do órgão"] = cnpj_org
-
+        if cnpj_org: meta["CNPJ do órgão"] = cnpj_org
         poder = org.get("poderId")
         if poder:
-            rotulo_poder = PODER_MAP.get(poder)
-            meta["Poder"] = f"{poder} - {rotulo_poder}" if rotulo_poder else str(poder)
-
+            meta["Poder"] = f"{poder} - {PODER_MAP.get(poder) or ''}".strip(" -")
         esfera = org.get("esferaId")
         if esfera:
-            rotulo_esfera = ESFERA_MAP.get(esfera)
-            meta["Esfera"] = f"{esfera} - {rotulo_esfera}" if rotulo_esfera else str(esfera)
+            meta["Esfera"] = f"{esfera} - {ESFERA_MAP.get(esfera) or ''}".strip(" -")
 
-    # --- Modalidade ---
     cod_mod = c.get("codigoModalidadeContratacao")
     if cod_mod is not None:
         try:
-            cod_i = int(cod_mod)
-            desc = MODALIDADES.get(cod_i)
+            cod_i = int(cod_mod); desc = MODALIDADES.get(cod_i)
             meta["Modalidade da contratação"] = f"{cod_i} - {desc}" if desc else str(cod_i)
         except Exception:
             meta["Modalidade da contratação"] = str(cod_mod)
 
-    # --- Amparo legal ---
     amparo = c.get("amparoLegal")
     if isinstance(amparo, dict):
         amparo_str = amparo.get("nome") or amparo.get("descricao")
     else:
         amparo_str = str(amparo) if amparo else None
-    if amparo_str:
-        meta["Amparo legal"] = amparo_str
+    if amparo_str: meta["Amparo legal"] = amparo_str
 
-    # --- Modo de disputa (na consulta costuma vir como código) ---
     cod_modo = c.get("codigoModoDisputa")
     if cod_modo is not None:
         meta["Modo de disputa"] = str(cod_modo)
 
-    # --- Registro de preço ---
     reg_preco = c.get("registroPreco")
     if isinstance(reg_preco, bool):
         meta["Registro de preço"] = "Sim" if reg_preco else "Não"
 
-    # --- Datas ---
-    data_divulgacao = _fmt_date(c.get("dataDivulgacaoPncp"))
-    if data_divulgacao:
-        meta["Data de divulgação no PNCP"] = data_divulgacao
+    data_div = _fmt_date(c.get("dataDivulgacaoPncp"))
+    if data_div: meta["Data de divulgação no PNCP"] = data_div
 
-    data_ini_prop = _fmt_date(c.get("dataInicioRecebimentoProposta"))
-    if data_ini_prop:
-        meta["Data de início de recebimento de propostas"] = data_ini_prop
+    data_ini = _fmt_date(c.get("dataInicioRecebimentoProposta"))
+    if data_ini: meta["Data de início de recebimento de propostas"] = data_ini
 
-    data_fim_prop = _fmt_date(c.get("dataFimRecebimentoProposta"))
-    if data_fim_prop:
-        meta["Data fim de recebimento de propostas"] = data_fim_prop
+    data_fim = _fmt_date(c.get("dataFimRecebimentoProposta"))
+    if data_fim: meta["Data fim de recebimento de propostas"] = data_fim
 
-    # --- Situação ---
     situacao = c.get("situacao")
-    if situacao:
-        meta["Situação"] = situacao
+    if situacao: meta["Situação"] = situacao
 
-    # --- Id PNCP + links úteis ---
     numero_controle = c.get("numeroControlePNCP") or c.get("numeroControlePncp")
     id_pncp, link_edital = (None, None)
     if numero_controle:
@@ -279,18 +249,28 @@ def extract_contratacao_meta(c: dict) -> dict:
             "api_itens": f"https://pncp.gov.br/api/pncp/v1/orgaos/{id_pncp.replace('/', '/compras/', 1)}/itens"
         }
     else:
-        # fallback: monta por cnpj/ano/seq se vierem no payload
-        cnpj = _get(c, ("orgaoEntidade", "cnpj"))
-        ano = c.get("anoCompra")
-        seq = c.get("sequencialCompra")
+        cnpj = _get(c, ("orgaoEntidade","cnpj")); ano = c.get("anoCompra"); seq = c.get("sequencialCompra")
         if cnpj and ano and seq:
             meta["Id contratação PNCP"] = f"{cnpj}/{ano}/{seq}"
             meta["Fonte"] = {
                 "edital": f"https://pncp.gov.br/app/editais/{cnpj}/{ano}/{seq}",
                 "api_itens": f"https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/itens"
             }
-
     return meta
+
+# ----------- 7 campos mínimos (para o TXT, com rótulos humanos) -----------
+def extract_campos_relatorio_minimos(c: dict) -> dict:
+    out: dict = {}
+    data_abertura = c.get("dataAberturaProposta") or c.get("dataInicioRecebimentoProposta")
+    data_encerr   = c.get("dataEncerramentoProposta") or c.get("dataFimRecebimentoProposta")
+    out["dataAberturaProposta"]     = _fmt_date(data_abertura) if data_abertura else None
+    out["dataEncerramentoProposta"] = _fmt_date(data_encerr)   if data_encerr   else None
+    out["modalidadeNome"]                  = c.get("modalidadeNome") or c.get("modalidade") or c.get("codigoModalidadeContratacao")
+    out["tipoInstrumentoConvocatorioNome"] = c.get("tipoInstrumentoConvocatorioNome") or c.get("tipoInstrumentoConvocatorioId")
+    out["modoDisputaNome"]                 = c.get("modoDisputaNome") or c.get("codigoModoDisputa")
+    out["situacaoCompraNome"]              = c.get("situacaoCompraNome") or c.get("situacao") or c.get("situacaoCompraId")
+    out["anoCompra"] = c.get("anoCompra")
+    return {k: v for k, v in out.items() if v not in (None, "", [], {})}
 
 # ============================== Consultas de Contratações ==============================
 def fetch_page_with_pagesize(session: requests.Session, pagina: int, data_ini: str, data_fim: str,
@@ -432,12 +412,6 @@ def fetch_itens_para_ids(session: requests.Session, ids_uniq: list[tuple[str, st
 
 # ============================== Saída / Relatórios ==============================
 def ensure_dirs(root: str, year: str, month: str):
-    """
-    Garante a estrutura:
-      root/
-        json/YYYY/MM/
-        txt/YYYY/MM/
-    """
     json_dir = os.path.join(root, "json", year, month)
     txt_dir  = os.path.join(root, "txt",  year, month)
     os.makedirs(json_dir, exist_ok=True)
@@ -449,10 +423,7 @@ def _append_if_present(lines: list[str], label: str, value):
         lines.append(f"{label}: {value}")
 
 def salvar_relatorios(json_path: str, txt_path: str, dados_json: dict, dados_txt: dict):
-    """
-    Salva JSON (todos os itens) e TXT (itens filtrados).
-    Retorna a string do conteúdo TXT gerado (para compor o unificado) e a contagem de itens filtrados.
-    """
+    """Salva JSON completo e TXT com cabeçalho fixo + 7 campos harmonizados; link no topo e linhas em branco conforme pedido."""
     # JSON
     if dados_json:
         try:
@@ -476,37 +447,52 @@ def salvar_relatorios(json_path: str, txt_path: str, dados_json: dict, dados_txt
 
         for id_pncp, data in dados_txt.items():
             meta = data.get('metadados', {}) or {}
+            mini = data.get('metadados_txt_min', {}) or {}
 
             txt_content_lines.append("\n============================================================")
             _append_if_present(txt_content_lines, "CONTRATAÇÃO ID", meta.get('Id contratação PNCP') or id_pncp)
+
+            # Link do Edital primeiro + linha em branco
+            fonte_hdr = (meta.get('Fonte') or {})
+            _append_if_present(txt_content_lines, "Link do Edital", fonte_hdr.get('edital'))
+            txt_content_lines.append("")
+
+            # Objeto
             _append_if_present(txt_content_lines, "Objeto", data.get('objeto'))
-            fonte = (meta.get('Fonte') or {})
-            _append_if_present(txt_content_lines, "Link do Edital", fonte.get('edital'))
 
-            txt_content_lines.append("------------------------------------------------------------")
+            # Cabeçalho fixo
+            _append_if_present(txt_content_lines, "Órgão",           meta.get("Órgão"))
+            _append_if_present(txt_content_lines, "CNPJ do órgão",   meta.get("CNPJ do órgão"))
+            _append_if_present(txt_content_lines, "Poder",           meta.get("Poder"))
+            _append_if_present(txt_content_lines, "Esfera",          meta.get("Esfera"))
+            _append_if_present(txt_content_lines, "Amparo legal",    meta.get("Amparo legal"))
+            _append_if_present(txt_content_lines, "Fonte (API Itens)", (meta.get("Fonte") or {}).get("api_itens"))
 
-            # Imprime SOMENTE os campos existentes no meta (sem N/D)
-            order = [
-                "Órgão",
-                "CNPJ do órgão",
-                "Poder",
-                "Esfera",
-                "Modalidade da contratação",
-                "Amparo legal",
-                "Modo de disputa",
-                "Registro de preço",
-                "Data de divulgação no PNCP",
-                "Situação",
-                "Data de início de recebimento de propostas",
-                "Data fim de recebimento de propostas",
+            # 7 campos (ordem harmonizada)
+            order_min = [
+                "modalidadeNome",
+                "tipoInstrumentoConvocatorioNome",
+                "modoDisputaNome",
+                "situacaoCompraNome",
+                "anoCompra",
+                "dataAberturaProposta",
+                "dataEncerramentoProposta",
             ]
-            for k in order:
-                if k in meta and meta[k] not in (None, "", [], {}):
-                    txt_content_lines.append(f"{k}: {meta[k]}")
+            rotulos = {
+                "modalidadeNome": "Modalidade",
+                "tipoInstrumentoConvocatorioNome": "Tipo de Instrumento Convocatório",
+                "modoDisputaNome": "Modo de disputa",
+                "situacaoCompraNome": "Situação",
+                "anoCompra": "Ano",
+                "dataAberturaProposta": "Data de início de recebimento de propostas",
+                "dataEncerramentoProposta": "Data fim de recebimento de propostas",
+            }
+            for k in order_min:
+                if k in mini and mini[k] not in (None, "", [], {}):
+                    txt_content_lines.append(f"{rotulos[k]}: {mini[k]}")
 
-            _append_if_present(txt_content_lines, "Fonte (API Itens)", fonte.get('api_itens'))
-
-            txt_content_lines.append("------------------------------------------------------------")
+            # Espaço antes da lista de itens
+            txt_content_lines.append("")
             txt_content_lines.append("Itens Encontrados (filtrados por descrição):\n")
 
             for item in data.get('itens_filtrados', []):
@@ -550,7 +536,6 @@ if __name__ == "__main__":
 
         session = build_session()
 
-        # Diretórios raiz dos relatórios
         ROOT_REL = os.path.join(os.getcwd(), "Relatórios")
         os.makedirs(ROOT_REL, exist_ok=True)
 
@@ -558,22 +543,18 @@ if __name__ == "__main__":
         total_meses = len(intervalos_mensais)
         print(f"\n[INFO] O período foi dividido em {total_meses} busca(s) mensal(is).")
 
-        # Para compor o TXT UNIFICADO ao final:
         unificado_sections = []
         total_itens_filtrados_geral = 0
 
         for i, (data_inicial_mes, data_final_mes) in enumerate(intervalos_mensais):
             print(f"\n{'='*20} BUSCANDO MÊS {i+1}/{total_meses}: {data_inicial_mes} a {data_final_mes} {'='*20}")
 
-            # 1) Coletar contratações do mês
             contratacoes_mes = fetch_contratacoes_multi_modalidade(session, data_inicial_mes, data_final_mes, modalidades, modo)
             print(f"\n[INFO] Mês {i+1}: {len(contratacoes_mes)} contratações coletadas.")
 
-            # 2) Filtrar por palavra no objeto
             filtradas_mes = [c for c in contratacoes_mes if palavra_contratacao in (c.get("objetoCompra") or "").lower()]
             print(f"[INFO] Mês {i+1}: {len(filtradas_mes)} contratações após filtro no objeto.")
 
-            # 3) Coletar IDs únicos + metadados
             id_to_info_mes = {}
             ids_do_mes = []
             for c in filtradas_mes:
@@ -590,7 +571,8 @@ if __name__ == "__main__":
 
                 if id_pncp and id_pncp not in id_to_info_mes:
                     meta = extract_contratacao_meta(c)
-                    # garante ID/link dentro dos metadados, sem "N/D"
+                    mini = extract_campos_relatorio_minimos(c)
+
                     if not meta.get("Id contratação PNCP"):
                         meta["Id contratação PNCP"] = id_pncp
                         meta["Fonte"] = {
@@ -598,7 +580,6 @@ if __name__ == "__main__":
                             "api_itens": f"https://pncp.gov.br/api/pncp/v1/orgaos/{id_pncp.replace('/', '/compras/', 1)}/itens"
                         }
                     else:
-                        # completa links se faltarem
                         fonte = meta.setdefault("Fonte", {})
                         fonte.setdefault("edital", link)
                         fonte.setdefault("api_itens", f"https://pncp.gov.br/api/pncp/v1/orgaos/{id_pncp.replace('/', '/compras/', 1)}/itens")
@@ -607,15 +588,14 @@ if __name__ == "__main__":
                         "objeto": (c.get("objetoCompra") or "").strip(),
                         "link": link,
                         "metadados": meta,
+                        "metadados_txt_min": mini,
                     }
                     ids_do_mes.append(id_pncp)
 
             print(f"[INFO] Mês {i+1}: {len(ids_do_mes)} contratações únicas para buscar itens.")
 
-            # 4) Buscar itens das contratações
             itens_brutos_mes = fetch_itens_para_ids(session, [(i, i) for i in ids_do_mes])
 
-            # 5a) JSON: todos os itens + metadados
             dados_para_json_mes = {}
             for item in itens_brutos_mes:
                 idp = item['id_pncp']
@@ -629,7 +609,6 @@ if __name__ == "__main__":
                     }
                 dados_para_json_mes[idp]['todos_os_itens'].append(item)
 
-            # 5b) TXT: somente itens filtrados + metadados
             itens_filtrados_mes = [item for item in itens_brutos_mes if not termos_re or termos_re.search(item.get("Descricao", ""))]
             dados_para_txt_mes = {}
             for item in itens_filtrados_mes:
@@ -640,11 +619,11 @@ if __name__ == "__main__":
                         "objeto": base.get("objeto"),
                         "link": base.get("link"),
                         "metadados": base.get("metadados", {}),
+                        "metadados_txt_min": base.get("metadados_txt_min", {}),
                         "itens_filtrados": []
                     }
                 dados_para_txt_mes[idp]['itens_filtrados'].append(item)
 
-            # 6) Saída por mês (com estrutura de diretórios /Relatórios/json/YYYY/MM/ e /Relatórios/txt/YYYY/MM/)
             dt_start = datetime.strptime(data_inicial_mes, "%Y%m%d")
             year = f"{dt_start.year:04d}"
             month = f"{dt_start.month:02d}"
@@ -655,23 +634,19 @@ if __name__ == "__main__":
 
             txt_block, qtd_itens_filtrados_mes = salvar_relatorios(json_path, txt_path, dados_para_json_mes, dados_para_txt_mes)
 
-            # Para o UNIFICADO (rótulo de mês):
             if txt_block:
                 titulo_mes = f"\n########################  {year}-{month}  ########################\n"
                 unificado_sections.append(titulo_mes + txt_block)
                 total_itens_filtrados_geral += qtd_itens_filtrados_mes
 
-            # 7) Resumo
             print(f"\n[RESUMO {year}-{month}] Contratações com itens filtrados: {len(dados_para_txt_mes)}")
             print(f"[RESUMO {year}-{month}] Itens individuais filtrados: {qtd_itens_filtrados_mes}")
 
-            # 8) Pausa entre meses
             if i < total_meses - 1:
                 print(f"\n[PAUSA] Fim do mês {year}-{month}. Pausando por {PAUSA_ENTRE_MESES_SEGUNDOS}s...")
                 time.sleep(PAUSA_ENTRE_MESES_SEGUNDOS)
 
-        # ================= UNIFICADO AO FINAL ==================
-        # arquivo: Relatórios/txt/_UNIFICADO_{AAAAMMDD}_{AAAAMMDD}.txt
+        # UNIFICADO
         unificado_dir = os.path.join(ROOT_REL, "txt")
         os.makedirs(unificado_dir, exist_ok=True)
         unificado_name = f"_UNIFICADO_{data_inicial_geral}_{data_final_geral}.txt"
