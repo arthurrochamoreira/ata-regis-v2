@@ -43,11 +43,28 @@ MODALIDADES = {
     12: "Credenciamento", 13: "Leilão – Presencial",
 }
 
+# Mapas amigáveis (não obrigatórios; se não houver mapeamento, mostra o código cru)
+PODER_MAP = {
+    "E": "Executivo",
+    "L": "Legislativo",
+    "J": "Judiciário",
+    "M": "Ministério Público",
+    "D": "Defensoria Pública",
+    "T": "Tribunais de Contas",
+    "N": "Município",  # costuma aparecer para Prefeitura
+}
+ESFERA_MAP = {
+    "U": "União",
+    "E": "Estadual",
+    "M": "Municipal",
+    "D": "Distrito Federal",
+}
+
 # ============================== Utilidades ==============================
-def jloads(b): 
+def jloads(b):
     return json.loads(b.decode('utf-8'))
 
-def jdumps(d): 
+def jdumps(d):
     return json.dumps(d, ensure_ascii=False, indent=2).encode('utf-8')
 
 def _fmt_date(v):
@@ -178,15 +195,32 @@ def extract_contratacao_meta(c: dict) -> dict:
     """
     Extrai SOMENTE campos que existem no endpoint /consulta/v1/contratacoes/publicacao,
     sem inventar chaves e sem colocar 'N/D'. Campos ausentes simplesmente não entram.
+    Agora inclui: razaoSocial, cnpj, poderId, esferaId (com rótulos).
     """
     meta: dict = {}
 
-    # Órgão (nome) e CNPJ
-    orgao = _get(c, ("orgaoEntidade", "razaosocial"))
-    if orgao:
-        meta["Órgão"] = orgao
+    # --- Órgão / Entidade (orgaoEntidade) ---
+    org = c.get("orgaoEntidade") or {}
+    if isinstance(org, dict):
+        razao = org.get("razaosocial") or org.get("razaoSocial")
+        if razao:
+            meta["Órgão"] = razao
 
-    # Modalidade
+        cnpj_org = org.get("cnpj")
+        if cnpj_org:
+            meta["CNPJ do órgão"] = cnpj_org
+
+        poder = org.get("poderId")
+        if poder:
+            rotulo_poder = PODER_MAP.get(poder)
+            meta["Poder"] = f"{poder} - {rotulo_poder}" if rotulo_poder else str(poder)
+
+        esfera = org.get("esferaId")
+        if esfera:
+            rotulo_esfera = ESFERA_MAP.get(esfera)
+            meta["Esfera"] = f"{esfera} - {rotulo_esfera}" if rotulo_esfera else str(esfera)
+
+    # --- Modalidade ---
     cod_mod = c.get("codigoModalidadeContratacao")
     if cod_mod is not None:
         try:
@@ -196,7 +230,7 @@ def extract_contratacao_meta(c: dict) -> dict:
         except Exception:
             meta["Modalidade da contratação"] = str(cod_mod)
 
-    # Amparo legal
+    # --- Amparo legal ---
     amparo = c.get("amparoLegal")
     if isinstance(amparo, dict):
         amparo_str = amparo.get("nome") or amparo.get("descricao")
@@ -205,17 +239,17 @@ def extract_contratacao_meta(c: dict) -> dict:
     if amparo_str:
         meta["Amparo legal"] = amparo_str
 
-    # Modo de disputa (só código na consulta)
+    # --- Modo de disputa (na consulta costuma vir como código) ---
     cod_modo = c.get("codigoModoDisputa")
     if cod_modo is not None:
         meta["Modo de disputa"] = str(cod_modo)
 
-    # Registro de preço
+    # --- Registro de preço ---
     reg_preco = c.get("registroPreco")
     if isinstance(reg_preco, bool):
         meta["Registro de preço"] = "Sim" if reg_preco else "Não"
 
-    # Datas
+    # --- Datas ---
     data_divulgacao = _fmt_date(c.get("dataDivulgacaoPncp"))
     if data_divulgacao:
         meta["Data de divulgação no PNCP"] = data_divulgacao
@@ -228,12 +262,12 @@ def extract_contratacao_meta(c: dict) -> dict:
     if data_fim_prop:
         meta["Data fim de recebimento de propostas"] = data_fim_prop
 
-    # Situação
+    # --- Situação ---
     situacao = c.get("situacao")
     if situacao:
         meta["Situação"] = situacao
 
-    # Id PNCP + link
+    # --- Id PNCP + links úteis ---
     numero_controle = c.get("numeroControlePNCP") or c.get("numeroControlePncp")
     id_pncp, link_edital = (None, None)
     if numero_controle:
@@ -245,7 +279,7 @@ def extract_contratacao_meta(c: dict) -> dict:
             "api_itens": f"https://pncp.gov.br/api/pncp/v1/orgaos/{id_pncp.replace('/', '/compras/', 1)}/itens"
         }
     else:
-        # ainda assim devolve Fonte se conseguir montar por outras chaves (raro na consulta)
+        # fallback: monta por cnpj/ano/seq se vierem no payload
         cnpj = _get(c, ("orgaoEntidade", "cnpj"))
         ano = c.get("anoCompra")
         seq = c.get("sequencialCompra")
@@ -454,6 +488,9 @@ def salvar_relatorios(json_path: str, txt_path: str, dados_json: dict, dados_txt
             # Imprime SOMENTE os campos existentes no meta (sem N/D)
             order = [
                 "Órgão",
+                "CNPJ do órgão",
+                "Poder",
+                "Esfera",
                 "Modalidade da contratação",
                 "Amparo legal",
                 "Modo de disputa",
@@ -618,7 +655,7 @@ if __name__ == "__main__":
 
             txt_block, qtd_itens_filtrados_mes = salvar_relatorios(json_path, txt_path, dados_para_json_mes, dados_para_txt_mes)
 
-            # Para o UNIFICADO (rotulo de mês):
+            # Para o UNIFICADO (rótulo de mês):
             if txt_block:
                 titulo_mes = f"\n########################  {year}-{month}  ########################\n"
                 unificado_sections.append(titulo_mes + txt_block)
