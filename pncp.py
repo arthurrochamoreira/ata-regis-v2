@@ -670,7 +670,7 @@ if __name__ == "__main__":
                 print(f"\n[PAUSA] Fim do mês {year}-{month}. Pausando por {PAUSA_ENTRE_MESES_SEGUNDOS}s...")
                 time.sleep(PAUSA_ENTRE_MESES_SEGUNDOS)
 
-        # ================= UNIFICADO AO FINAL =================
+        # ================= UNIFICADO AO FINAL ==================
         # arquivo: Relatórios/txt/_UNIFICADO_{AAAAMMDD}_{AAAAMMDD}.txt
         unificado_dir = os.path.join(ROOT_REL, "txt")
         os.makedirs(unificado_dir, exist_ok=True)
