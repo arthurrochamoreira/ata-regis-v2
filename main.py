@@ -199,6 +199,21 @@ DEFAULT_BADGE_SIZE = "sm"
 BORDER_WIDTH = 1
 BORDER_RADIUS_PILL = 999
 
+# ==============================
+# CONST: Modalidades PNCP (rótulos ilustrativos)
+# ==============================
+MODALIDADES = [
+    (1,  "Leilão – Eletrônico"),
+    (2,  "Diálogo Competitivo"),
+    (3,  "Concurso"),
+    (4,  "Concorrência – Eletrônica"),
+    (5,  "Concorrência – Internacional"),
+    (6,  "Pregão – Eletrônico"),
+    (7,  "Pregão – Presencial"),
+    (8,  "Dispensa de Licitação"),
+    (9,  "Inexigibilidade"),
+    (10, "RDC – Regime Diferenciado de Contratações"),
+]
 
 # ==============================
 # INTEGRAÇÃO COM BANCO DE DADOS
@@ -644,7 +659,9 @@ def main(page: ft.Page):
             set_content(SimplePage("Vencimentos", "Veja suas atas que estão próximas de vencer."))
         elif key == "config":
             set_content(SimplePage("Configurações", "Gerencie as configurações do sistema."))
-        
+        elif key == "pncp_search":
+            set_content(PNCPSearchView())
+
         page.update()
 
     def toggle_sidebar(_=None):
@@ -750,7 +767,10 @@ def main(page: ft.Page):
             set_content(SimplePage("Vencimentos", "Veja suas atas que estão próximas de vencer."))
         elif active_view_key == "config":
             set_content(SimplePage("Configurações", "Gerencie as configurações do sistema."))
+        elif active_view_key == "pncp_search":
+            set_content(PNCPSearchView())
         else:
+            
             page.update()
 
     # ==============================
@@ -892,6 +912,199 @@ def main(page: ft.Page):
             columns=12, run_spacing=16, spacing=16,
         )
         return grid
+    
+    def PNCPSearchView():
+    # ---------- campos ----------
+        palavra_obj = tf(
+            label="Palavra no Objeto",
+            hint_text="Ex: software",
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
+            border_radius=BORDER_RADIUS_PILL,
+            height=PILL["md"]["h"],
+            content_padding=ft.padding.symmetric(0, PILL["md"]["px"]),
+        )
+
+        termos_itens = tf(
+            label="Termos nos Itens (separados por ;)",
+            hint_text="Ex: licença;manutenção",
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
+            border_radius=BORDER_RADIUS_PILL,
+            height=PILL["md"]["h"],
+            content_padding=ft.padding.symmetric(0, PILL["md"]["px"]),
+        )
+
+        modo_disputa = tf(
+            label="Modo de Disputa (Opcional)",
+            hint_text="Ex: 1",
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
+            border_radius=BORDER_RADIUS_PILL,
+            height=PILL["md"]["h"],
+            content_padding=ft.padding.symmetric(0, PILL["md"]["px"]),
+        )
+
+        data_inicial = tf(
+            label="Data Inicial",
+            hint_text="dd/mm/aaaa",
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
+            border_radius=BORDER_RADIUS_PILL,
+            height=PILL["md"]["h"],
+            content_padding=ft.padding.symmetric(0, PILL["md"]["px"]),
+        )
+        data_final = tf(
+            label="Data Final",
+            hint_text="dd/mm/aaaa",
+            bgcolor=TOKENS["colors"]["bg"]["input"]["default"],
+            border_radius=BORDER_RADIUS_PILL,
+            height=PILL["md"]["h"],
+            content_padding=ft.padding.symmetric(0, PILL["md"]["px"]),
+        )
+
+        # máscaras de data
+        def _mask_date(e):
+            e.control.value = MaskUtils.aplicar_mascara_data(e.control.value)
+            e.control.update()
+        data_inicial.on_change = _mask_date
+        data_final.on_change = _mask_date
+
+        # ---------- lista de modalidades ----------
+        mods_state: dict[int, bool] = {cod: False for cod, _ in MODALIDADES}
+        mods_checks: list[ft.Checkbox] = []
+
+        def _on_mod_change(e, cod: int):
+            mods_state[cod] = bool(e.control.value)
+
+        for cod, label in MODALIDADES:
+            cb = ft.Checkbox(
+                label=f"{cod}: {label}",
+                value=False,
+                on_change=lambda e, c=cod: _on_mod_change(e, c),
+                label_style=ft.TextStyle(size=13, color=get_theme_color("text.primary")),
+            )
+            mods_checks.append(cb)
+
+        mods_list = ft.ListView(
+            controls=mods_checks,
+            expand=False,
+            height=220,
+            padding=ft.padding.symmetric(6, 0),
+            spacing=4,
+            auto_scroll=False,
+        )
+
+        # selecionar todas / limpar
+        def _toggle_all(e):
+            selecionar = any(not v for v in mods_state.values())  # se houver alguma desmarcada, marcar todas
+            for cb in mods_checks:
+                cb.value = selecionar
+                cb.update()
+            for k in mods_state:
+                mods_state[k] = selecionar
+
+        selecionar_todas_link = ft.TextButton(
+            "Selecionar todas",
+            on_click=_toggle_all,
+            style=ft.ButtonStyle(color=get_theme_color("brand.primary.bg")),
+        )
+
+        # ---------- log à direita ----------
+        log = ft.TextField(
+            read_only=True,
+            multiline=True,
+            min_lines=18,
+            max_lines=18,
+            border=ft.InputBorder.NONE,
+            value="Aguardando início da busca...",
+            text_style=ft.TextStyle(size=13),
+            bgcolor=("#0f172a" if get_active_theme() == "dark" else TOKENS["colors"]["bg"]["surface"]["light"]),
+            color=(ft.Colors.WHITE if get_active_theme() == "dark" else get_theme_color("text.primary")),
+        )
+
+        # ---------- ação: iniciar busca (simulação de UI) ----------
+        def _iniciar_busca(_):
+            mods_sel = [str(k) for k, v in mods_state.items() if v]
+            resumo = [
+                "▶ PNCP Search",
+                f"Objeto: {palavra_obj.value or '—'}",
+                f"Termos nos itens: {termos_itens.value or '—'}",
+                f"Modalidades: {', '.join(mods_sel) if mods_sel else 'todas'}",
+                f"Modo de disputa: {modo_disputa.value or '—'}",
+                f"Período: {data_inicial.value or '—'} a {data_final.value or '—'}",
+                "Status: busca iniciada (pré-UI).",
+            ]
+            log.value = "\n".join(resumo)
+            page.update()
+
+        iniciar_btn = pill_button(
+            "Iniciar Busca",
+            icon="play_arrow",
+            variant="filled",
+            on_click=_iniciar_busca,
+            style=ft.ButtonStyle(
+                bgcolor=get_theme_color("brand.primary.bg"),
+                color=get_theme_color("text.inverse"),
+                padding=ft.padding.symmetric(0, 20),
+                shape=ft.RoundedRectangleBorder(radius=BORDER_RADIUS_PILL),
+            ),
+        )
+
+        # ---------- cards ----------
+        filtros_card = ft.Container(
+            bgcolor=get_theme_color("bg.surface"),
+            border_radius=16,
+            padding=16,
+            shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=TOKENS["colors"]["shadow"]["faint"]),
+            content=ft.Column(
+                spacing=12,
+                controls=[
+                    ft.Text("Filtros da Busca", size=16, weight=ft.FontWeight.W_600, color=get_theme_color("text.primary")),
+                    palavra_obj,
+                    termos_itens,
+                    ft.Text("Modalidades", size=12, weight=ft.FontWeight.W_600, color=get_theme_color("text.muted")),
+                    mods_list,
+                    selecionar_todas_link,
+                    modo_disputa,
+                    ft.Row(
+                        spacing=8,
+                        controls=[ft.Container(content=data_inicial, expand=True), ft.Container(content=data_final, expand=True)],
+                    ),
+                    iniciar_btn,
+                ],
+            ),
+        )
+
+        progresso_card = ft.Container(
+            bgcolor=get_theme_color("bg.surface"),
+            border_radius=16,
+            padding=16,
+            shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=TOKENS["colors"]["shadow"]["faint"]),
+            content=ft.Column(
+                spacing=12,
+                controls=[
+                    ft.Text("Progresso da Busca", size=16, weight=ft.FontWeight.W_600, color=get_theme_color("text.primary")),
+                    ft.Container(
+                        content=log,
+                        bgcolor=None,
+                        border_radius=12,
+                        padding=0,
+                    ),
+                ],
+            ),
+        )
+
+        # ---------- layout geral ----------
+        header = ft.Text("PNCP Search", size=20, weight=ft.FontWeight.W_700, color=get_theme_color("text.primary"))
+
+        grid = ft.ResponsiveRow(
+            columns=12,
+            spacing=16,
+            run_spacing=16,
+            controls=[
+                ft.Container(content=filtros_card, col={"xs": 12, "lg": 4}),
+                ft.Container(content=progresso_card, col={"xs": 12, "lg": 8}),
+            ],
+        )
+        return ft.Column(controls=[header, grid], spacing=16)
+
 
     # ==============================
     # ATAS: Tabela, Detalhes e Edição
@@ -1742,6 +1955,8 @@ def main(page: ft.Page):
             make_item("atas", "article", "Atas"),
             make_item("vencimentos", "timer", "Vencimentos"),
             make_item("config", "settings", "Configurações"),
+            make_item("pncp_search", "search", "PNCP Search"),
+
         ],
         spacing=8, expand=True, scroll=ft.ScrollMode.AUTO,
     )
