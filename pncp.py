@@ -601,26 +601,17 @@ def salvar_relatorios(json_path: str, txt_path: str, dados_json: dict, dados_txt
     else:
         print("[INFO] Nenhum item correspondeu à descrição para gerar TXT.")
     return ("\n".join(txt_content_lines).rstrip() + "\n") if txt_content_lines else "", total_itens_filtrados
+    return ("\n".join(txt_content_lines).rstrip() + "\n") if txt_content_lines else "", total_itens_filtrados
 
 # ============================== MAIN ==============================
-if __name__ == "__main__":
-    try:
-        print("Modalidades disponíveis (código: nome):")
-        print(", ".join(f"{k}: {v}" for k, v in MODALIDADES.items()))
 
-        palavra_contratacao = input("Palavra no OBJETO da contratação: ").strip().lower()
-        termos_itens_raw = input("Termos na DESCRIÇÃO do item (separe por ';'): ").strip()
+def run(palavra_contratacao: str, termos_itens_raw: str, modalidades_raw: str,
+        modo_raw: str, data_inicial_geral: str, data_final_geral: str):
+    try:
         termos_itens = parse_terms(termos_itens_raw)
         termos_re = compile_or_regex(termos_itens)
-
-        modalidades_raw = input("Códigos de modalidade (ex.: 6;8;9): ").strip() or "6"
-        modalidades = parse_modalidades(modalidades_raw)
-
-        modo_raw = input("Código do modo de disputa (opcional, Enter p/ pular): ").strip()
+        modalidades = parse_modalidades(modalidades_raw or "6")
         modo = int(modo_raw) if modo_raw else None
-
-        data_inicial_geral = ask_date("Data inicial GERAL (AAAAMMDD): ")
-        data_final_geral   = ask_date("Data final GERAL   (AAAAMMDD): ")
 
         session = build_session()
 
@@ -778,3 +769,16 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"\n[FATAL] Ocorreu um erro inesperado: {e}")
+
+
+if __name__ == "__main__":
+    print("Modalidades disponíveis (código: nome):")
+    print(", ".join(f"{k}: {v}" for k, v in MODALIDADES.items()))
+
+    palavra_contratacao = input("Palavra no OBJETO da contratação: ").strip().lower()
+    termos_itens_raw = input("Termos na DESCRIÇÃO do item (separe por ';'): ").strip()
+    modalidades_raw = input("Códigos de modalidade (ex.: 6;8;9): ").strip() or "6"
+    modo_raw = input("Código do modo de disputa (opcional, Enter p/ pular): ").strip()
+    data_inicial_geral = ask_date("Data inicial GERAL (AAAAMMDD): ")
+    data_final_geral   = ask_date("Data final GERAL   (AAAAMMDD): ")
+    run(palavra_contratacao, termos_itens_raw, modalidades_raw, modo_raw, data_inicial_geral, data_final_geral)

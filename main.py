@@ -5,6 +5,9 @@ from datetime import date, datetime
 from typing import Optional, List
 import sqlite3
 import database as db
+import pncp
+import io
+import contextlib
 
 # ==============================
 # NOVA IMPORTAÇÕES PARA E-MAIL
@@ -914,7 +917,7 @@ def main(page: ft.Page):
         return grid
     
     def PNCPSearchView():
-    # ---------- campos ----------
+        # ---------- campos ----------
         palavra_obj = tf(
             label="Palavra no Objeto",
             hint_text="Ex: software",
@@ -993,7 +996,7 @@ def main(page: ft.Page):
 
         # selecionar todas / limpar
         def _toggle_all(e):
-            selecionar = any(not v for v in mods_state.values())  # se houver alguma desmarcada, marcar todas
+            selecionar = any(not v for v in mods_state.values())
             for cb in mods_checks:
                 cb.value = selecionar
                 cb.update()
@@ -1019,21 +1022,69 @@ def main(page: ft.Page):
             color=(ft.Colors.WHITE if get_active_theme() == "dark" else get_theme_color("text.primary")),
         )
 
-        # ---------- ação: iniciar busca (simulação de UI) ----------
+        # ---------- ação: iniciar busca ----------
+        # helpers de data
+        def _br_date_to_api(s: str) -> str:
+            m = re.fullmatch(r'(\d{2})/(\d{2})/(\d{4})', (s or '').strip())
+            return f"{m.group(3)}{m.group(2)}{m.group(1)}" if m else ""
+
         def _iniciar_busca(_):
             mods_sel = [str(k) for k, v in mods_state.items() if v]
+            data_i = _br_date_to_api(data_inicial.value)
+            data_f = _br_date_to_api(data_final.value)
+
+            # resumo no log
             resumo = [
                 "▶ PNCP Search",
                 f"Objeto: {palavra_obj.value or '—'}",
                 f"Termos nos itens: {termos_itens.value or '—'}",
                 f"Modalidades: {', '.join(mods_sel) if mods_sel else 'todas'}",
                 f"Modo de disputa: {modo_disputa.value or '—'}",
-                f"Período: {data_inicial.value or '—'} a {data_final.value or '—'}",
-                "Status: busca iniciada (pré-UI).",
+                f"Período: {(data_inicial.value or '—')} a {(data_final.value or '—')}",
+                "Status: iniciando busca...\n",
             ]
             log.value = "\n".join(resumo)
+
+            # evita clique duplo
+            iniciar_btn.disabled = True
             page.update()
 
+            def worker():
+                class Writer(io.TextIOBase):
+                    def write(self_inner, s):
+                        # Atualiza o log diretamente a partir do thread
+                        log.value += s
+                        log.update()
+                        return len(s)
+
+                msg = "Busca concluída. Relatórios gerados na pasta 'Relatórios'."
+                try:
+                    with contextlib.redirect_stdout(Writer()):
+                        pncp.run(
+                            (palavra_obj.value or '').strip().lower(),
+                            (termos_itens.value or '').strip(),
+                            ';'.join(mods_sel),
+                            (modo_disputa.value or '').strip(),
+                            data_i,
+                            data_f,
+                        )
+                except Exception as err:
+                    msg = f"Erro: {err}"
+
+                # Finaliza (sem call_from_thread)
+                iniciar_btn.disabled = False
+                page.snack_bar = ft.SnackBar(
+                    ft.Text(msg),
+                    bgcolor=(get_theme_color("semantic.success.bg")
+                            if not msg.startswith("Erro")
+                            else get_theme_color("semantic.error.bg"))
+                )
+                page.snack_bar.open = True
+                page.update()
+
+            page.run_thread(worker)
+
+        # botão (definido ANTES de usá-lo no card)
         iniciar_btn = pill_button(
             "Iniciar Busca",
             icon="play_arrow",
@@ -1047,7 +1098,7 @@ def main(page: ft.Page):
             ),
         )
 
-        # ---------- cards ----------
+        # card de filtros (apenas uma vez)
         filtros_card = ft.Container(
             bgcolor=get_theme_color("bg.surface"),
             border_radius=16,
@@ -1081,17 +1132,12 @@ def main(page: ft.Page):
                 spacing=12,
                 controls=[
                     ft.Text("Progresso da Busca", size=16, weight=ft.FontWeight.W_600, color=get_theme_color("text.primary")),
-                    ft.Container(
-                        content=log,
-                        bgcolor=None,
-                        border_radius=12,
-                        padding=0,
-                    ),
+                    ft.Container(content=log, bgcolor=None, border_radius=12, padding=0),
                 ],
             ),
         )
 
-        # ---------- layout geral ----------
+        # layout geral
         header = ft.Text("PNCP Search", size=20, weight=ft.FontWeight.W_700, color=get_theme_color("text.primary"))
 
         grid = ft.ResponsiveRow(
@@ -1104,6 +1150,7 @@ def main(page: ft.Page):
             ],
         )
         return ft.Column(controls=[header, grid], spacing=16)
+
 
 
     # ==============================
