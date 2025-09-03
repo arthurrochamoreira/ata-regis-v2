@@ -1,20 +1,27 @@
 import os
 import re
+import io
 import time
 import math
-import requests
 import json
+import random
 import threading
 import calendar
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # ============================== Configs ==============================
 BASE_CONSULTA = "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao"
 BASE_ITENS = "https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/itens"
-HEADERS = {"Accept": "*/*", "User-Agent": "pncp-script-py/1.6"}
+HEADERS = {
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate",  # força compressão
+    "User-Agent": "pncp-script-py/1.6"
+}
 PAUSA_ENTRE_MESES_SEGUNDOS = 30  # Pausa entre meses
 
 # Limites de concorrência
@@ -43,22 +50,23 @@ MODALIDADES = {
     12: "Credenciamento", 13: "Leilão – Presencial",
 }
 
-PODER_MAP = {"E":"Executivo","L":"Legislativo","J":"Judiciário","M":"Ministério Público","D":"Defensoria Pública","T":"Tribunais de Contas","N":"Município"}
-ESFERA_MAP = {"U":"União","E":"Estadual","M":"Municipal","D":"Distrito Federal"}
+PODER_MAP = {"E": "Executivo", "L": "Legislativo", "J": "Judiciário", "M": "Ministério Público", "D": "Defensoria Pública", "T": "Tribunais de Contas", "N": "Município"}
+ESFERA_MAP = {"U": "União", "E": "Estadual", "M": "Municipal", "D": "Distrito Federal"}
 
 # ============================== Utilidades ==============================
-def jloads(b):
-    return json.loads(b.decode('utf-8'))
+def jloads(b: bytes | str):
+    if isinstance(b, bytes):
+        return json.loads(b.decode("utf-8", "ignore"))
+    return json.loads(b)
 
-def jdumps(d):
-    return json.dumps(d, ensure_ascii=False, indent=2).encode('utf-8')
+def jdumps(d) -> bytes:
+    return json.dumps(d, ensure_ascii=False, indent=2).encode("utf-8")
 
 def _fmt_date(v):
     """Formata datas no padrão DD/MM/AAAA ou DD/MM/AAAA HH:MM, conforme o valor."""
     if not v:
         return None
     s = str(v)
-
     formatos = [
         ("%Y-%m-%dT%H:%M:%S.%f", "%d/%m/%Y %H:%M"),
         ("%Y-%m-%dT%H:%M:%S",    "%d/%m/%Y %H:%M"),
@@ -70,13 +78,11 @@ def _fmt_date(v):
             return datetime.strptime(s[:len(fmt_in)], fmt_in).strftime(fmt_out)
         except Exception:
             pass
-
     if re.fullmatch(r"\d{8}", s):  # ex.: 20240916
         try:
             return datetime.strptime(s, "%Y%m%d").strftime("%d/%m/%Y")
         except Exception:
             pass
-
     return s  # se nada casar, retorna o original
 
 def _get(d, *paths, default=None):
@@ -174,7 +180,7 @@ def get_with_backoff(session: requests.Session, url: str, *, params=None,
             attempt += 1
             if attempt > max_retries:
                 raise requests.HTTPError(f"HTTP {r.status_code} em {r.url}\n{r.text[:1000]}")
-            wait = (1.4 ** attempt) + attempt * 0.25
+            wait = (1.4 ** attempt) + attempt * 0.25 + random.random() * 0.25  # jitter para evitar batida
             print(f"[WARN] {r.status_code} em {r.url} — retry {attempt}/{max_retries} em {wait:.1f}s")
             time.sleep(wait)
             continue
@@ -184,6 +190,31 @@ def get_with_backoff(session: requests.Session, url: str, *, params=None,
         except Exception:
             pass
         raise requests.HTTPError(f"HTTP {r.status_code} em {r.url}\n{body}")
+
+# ------------------------- Unidade Compradora (helper, opcional) -------------------------
+def get_unidade_nome_from_payload(c: dict) -> str | None:
+    """Tenta localizar o nome da unidade em caminhos conhecidos do PNCP."""
+    for path in [
+        ("unidadeOrgao", "nomeUnidade"),
+        ("unidadeOrgao", "nome"),
+        ("unidadeCompradora", "nomeUnidade"),
+        ("unidadeCompradora", "nome"),
+        ("unidadeGestora", "nome"),
+        ("unidade", "nome"),
+        ("orgaoEntidade", "unidadeOrgao", "nomeUnidade"),
+        ("orgaoEntidade", "unidadeOrgao", "nome"),
+    ]:
+        cur = c
+        ok = True
+        for k in path:
+            if isinstance(cur, dict) and k in cur:
+                cur = cur[k]
+            else:
+                ok = False
+                break
+        if ok and isinstance(cur, str) and cur.strip():
+            return cur.strip()
+    return None
 
 # ------------------------- Metadados da contratação -------------------------
 def extract_contratacao_meta(c: dict) -> dict:
@@ -202,6 +233,11 @@ def extract_contratacao_meta(c: dict) -> dict:
         esfera = org.get("esferaId")
         if esfera:
             meta["Esfera"] = f"{esfera} - {ESFERA_MAP.get(esfera) or ''}".strip(" -")
+
+    # Unidade compradora (robusto)
+    uni_nome = get_unidade_nome_from_payload(c)
+    if uni_nome:
+        meta["Unidade compradora"] = uni_nome
 
     cod_mod = c.get("codigoModalidadeContratacao")
     if cod_mod is not None:
@@ -249,7 +285,7 @@ def extract_contratacao_meta(c: dict) -> dict:
             "api_itens": f"https://pncp.gov.br/api/pncp/v1/orgaos/{id_pncp.replace('/', '/compras/', 1)}/itens"
         }
     else:
-        cnpj = _get(c, ("orgaoEntidade","cnpj")); ano = c.get("anoCompra"); seq = c.get("sequencialCompra")
+        cnpj = _get(c, ("orgaoEntidade", "cnpj")); ano = c.get("anoCompra"); seq = c.get("sequencialCompra")
         if cnpj and ano and seq:
             meta["Id contratação PNCP"] = f"{cnpj}/{ano}/{seq}"
             meta["Fonte"] = {
@@ -271,6 +307,36 @@ def extract_campos_relatorio_minimos(c: dict) -> dict:
     out["situacaoCompraNome"]              = c.get("situacaoCompraNome") or c.get("situacao") or c.get("situacaoCompraId")
     out["anoCompra"] = c.get("anoCompra")
     return {k: v for k, v in out.items() if v not in (None, "", [], {})}
+
+# ============================== Progress agregado ==============================
+class Progress:
+    def __init__(self, emit_every=50, emit_seconds=2.0, prefix=""):
+        self.emit_every = int(emit_every)
+        self.emit_seconds = float(emit_seconds)
+        self.prefix = prefix
+        self.pages_done = 0
+        self.pages_total = 0
+        self.items_done = 0
+        self._last_emit = time.monotonic()
+
+    def set_pages_total(self, total: int):
+        self.pages_total = int(total)
+
+    def page_tick(self, n: int = 1):
+        self.pages_done += n
+        self._maybe_emit()
+
+    def items_tick(self, n: int = 1):
+        self.items_done += n
+        self._maybe_emit()
+
+    def _maybe_emit(self):
+        now = time.monotonic()
+        if (self.emit_every and ((self.pages_done + self.items_done) % self.emit_every == 0)) \
+           or (now - self._last_emit >= self.emit_seconds):
+            pct = (self.pages_done / self.pages_total * 100.0) if self.pages_total else 0.0
+            print(f"{self.prefix} progresso: páginas {self.pages_done}/{self.pages_total} ({pct:5.1f}%) | itens {self.items_done}")
+            self._last_emit = now
 
 # ============================== Consultas de Contratações ==============================
 def fetch_page_with_pagesize(session: requests.Session, pagina: int, data_ini: str, data_fim: str,
@@ -320,35 +386,53 @@ def discover_total_pages_for_modalidade(session: requests.Session, data_ini: str
     return int(total), dados
 
 def fetch_all_pages_for_modalidade(session: requests.Session, total_pages: int, data_ini: str, data_fim: str,
-                                      modalidade: int, modo: int | None) -> list[dict]:
+                                   modalidade: int, modo: int | None,
+                                   progress: Progress | None = None) -> list[dict]:
     if total_pages <= 1:
         return []
     results = []
     with ThreadPoolExecutor(max_workers=MAX_WORKERS_PAGES) as ex:
-        futures = {ex.submit(fetch_page_with_pagesize, session, p, data_ini, data_fim, modalidade, modo): p for p in range(2, total_pages + 1)}
+        futures = {ex.submit(fetch_page_with_pagesize, session, p, data_ini, data_fim, modalidade, modo): p
+                   for p in range(2, total_pages + 1)}
         for fut in as_completed(futures):
+            pnum = futures[fut]
             try:
                 payload = fut.result()
                 lote = payload.get("data", [])
-                print(f"[MOD {modalidade:>2}] [PÁG {futures[fut]}] {len(lote)} registros")
                 results.extend(lote)
             except Exception as e:
-                print(f"[ERRO] Página {futures[fut]} (mod {modalidade}) falhou: {e}")
+                print(f"[ERRO] Página {pnum} (mod {modalidade}) falhou: {e}")
+            finally:
+                if progress:
+                    progress.page_tick(1)
     return results
 
 def fetch_contratacoes_multi_modalidade(session: requests.Session, data_ini: str, data_fim: str,
-                                         modalidades: list[int], modo: int | None) -> list[dict]:
+                                        modalidades: list[int], modo: int | None,
+                                        progress_pages: Progress | None = None) -> list[dict]:
     all_contratacoes = []
     discovered = []
+    total_pages_sum = 0
+
+    # Descobre total por modalidade (e pega a pág 1 de cada)
     for m in modalidades:
         try:
-            discovered.append((m, discover_total_pages_for_modalidade(session, data_ini, data_fim, m, modo)))
+            total, page1 = discover_total_pages_for_modalidade(session, data_ini, data_fim, m, modo)
+            discovered.append((m, total, page1))
+            total_pages_sum += max(1, int(total))
         except Exception as e:
             print(f"[ERRO] Descobrir páginas da modalidade {m} falhou: {e}")
 
-    for m, (total, page1) in discovered:
+    if progress_pages:
+        progress_pages.set_pages_total(total_pages_sum)
+
+    # Agrega a pág 1 e busca 2..N por modalidade, ticando o progresso
+    for m, total, page1 in discovered:
         all_contratacoes.extend(page1)
-        outras = fetch_all_pages_for_modalidade(session, total, data_ini, data_fim, m, modo)
+        outras = fetch_all_pages_for_modalidade(
+            session, total, data_ini, data_fim, m, modo,
+            progress=progress_pages
+        )
         all_contratacoes.extend(outras)
 
     return all_contratacoes
@@ -384,7 +468,8 @@ def itens_pncp_por_id(session: requests.Session, id_pncp: str) -> list[dict]:
         })
     return out
 
-def fetch_itens_para_ids(session: requests.Session, ids_uniq: list[tuple[str, str]]) -> list[dict]:
+def fetch_itens_para_ids(session: requests.Session, ids_uniq: list[tuple[str, str]],
+                         progress_items: Progress | None = None) -> list[dict]:
     if not ids_uniq:
         return []
     encontrados = []
@@ -405,9 +490,11 @@ def fetch_itens_para_ids(session: requests.Session, ids_uniq: list[tuple[str, st
                 itens = fut.result()
                 with lock:
                     encontrados.extend(itens)
-                print(f"[ITENS] {idp} -> {len(itens)}")
             except Exception as e:
                 print(f"[WARN] itens falharam {idp}: {e}")
+            finally:
+                if progress_items:
+                    progress_items.items_tick(1)
     return encontrados
 
 # ============================== Saída / Relatórios ==============================
@@ -461,12 +548,13 @@ def salvar_relatorios(json_path: str, txt_path: str, dados_json: dict, dados_txt
             _append_if_present(txt_content_lines, "Objeto", data.get('objeto'))
 
             # Cabeçalho fixo
-            _append_if_present(txt_content_lines, "Órgão",           meta.get("Órgão"))
-            _append_if_present(txt_content_lines, "CNPJ do órgão",   meta.get("CNPJ do órgão"))
-            _append_if_present(txt_content_lines, "Poder",           meta.get("Poder"))
-            _append_if_present(txt_content_lines, "Esfera",          meta.get("Esfera"))
-            _append_if_present(txt_content_lines, "Amparo legal",    meta.get("Amparo legal"))
-            _append_if_present(txt_content_lines, "Fonte (API Itens)", (meta.get("Fonte") or {}).get("api_itens"))
+            _append_if_present(txt_content_lines, "Órgão",                meta.get("Órgão"))
+            _append_if_present(txt_content_lines, "Unidade compradora",   meta.get("Unidade compradora"))
+            _append_if_present(txt_content_lines, "CNPJ do órgão",        meta.get("CNPJ do órgão"))
+            _append_if_present(txt_content_lines, "Poder",                meta.get("Poder"))
+            _append_if_present(txt_content_lines, "Esfera",               meta.get("Esfera"))
+            _append_if_present(txt_content_lines, "Amparo legal",         meta.get("Amparo legal"))
+            _append_if_present(txt_content_lines, "Fonte (API Itens)",    (meta.get("Fonte") or {}).get("api_itens"))
 
             # 7 campos (ordem harmonizada)
             order_min = [
@@ -543,18 +631,28 @@ if __name__ == "__main__":
         total_meses = len(intervalos_mensais)
         print(f"\n[INFO] O período foi dividido em {total_meses} busca(s) mensal(is).")
 
-        unificado_sections = []
+        # Unificado com StringIO
+        unificado_sections = io.StringIO()
         total_itens_filtrados_geral = 0
 
         for i, (data_inicial_mes, data_final_mes) in enumerate(intervalos_mensais):
             print(f"\n{'='*20} BUSCANDO MÊS {i+1}/{total_meses}: {data_inicial_mes} a {data_final_mes} {'='*20}")
 
-            contratacoes_mes = fetch_contratacoes_multi_modalidade(session, data_inicial_mes, data_final_mes, modalidades, modo)
+            # --- Progress por mês (páginas) ---
+            prog_pages = Progress(emit_every=40, emit_seconds=2.0, prefix=f"[MÊS {i+1:02d} PÁGINAS]")
+
+            # Busca contratações (todas as modalidades), com progresso agregado de páginas:
+            contratacoes_mes = fetch_contratacoes_multi_modalidade(
+                session, data_inicial_mes, data_final_mes, modalidades, modo,
+                progress_pages=prog_pages
+            )
             print(f"\n[INFO] Mês {i+1}: {len(contratacoes_mes)} contratações coletadas.")
 
+            # Filtro por objeto da contratação (em memória)
             filtradas_mes = [c for c in contratacoes_mes if palavra_contratacao in (c.get("objetoCompra") or "").lower()]
             print(f"[INFO] Mês {i+1}: {len(filtradas_mes)} contratações após filtro no objeto.")
 
+            # Mapeia IDs e metadados (em memória)
             id_to_info_mes = {}
             ids_do_mes = []
             for c in filtradas_mes:
@@ -594,8 +692,12 @@ if __name__ == "__main__":
 
             print(f"[INFO] Mês {i+1}: {len(ids_do_mes)} contratações únicas para buscar itens.")
 
-            itens_brutos_mes = fetch_itens_para_ids(session, [(i, i) for i in ids_do_mes])
+            # --- Progress por mês (itens) ---
+            prog_items = Progress(emit_every=20, emit_seconds=2.0, prefix=f"[MÊS {i+1:02d} ITENS]")
+            # Baixa itens (em memória), com progresso agregado de itens:
+            itens_brutos_mes = fetch_itens_para_ids(session, [(i, i) for i in ids_do_mes], progress_items=prog_items)
 
+            # Monta buffers EM MEMÓRIA para JSON e TXT (sem tocar disco ainda)
             dados_para_json_mes = {}
             for item in itens_brutos_mes:
                 idp = item['id_pncp']
@@ -610,6 +712,7 @@ if __name__ == "__main__":
                 dados_para_json_mes[idp]['todos_os_itens'].append(item)
 
             itens_filtrados_mes = [item for item in itens_brutos_mes if not termos_re or termos_re.search(item.get("Descricao", ""))]
+
             dados_para_txt_mes = {}
             for item in itens_filtrados_mes:
                 idp = item['id_pncp']
@@ -624,6 +727,7 @@ if __name__ == "__main__":
                     }
                 dados_para_txt_mes[idp]['itens_filtrados'].append(item)
 
+            # >>>>>> SÓ AGORA (FIM DO MÊS) FAZ I/O <<<<<<
             dt_start = datetime.strptime(data_inicial_mes, "%Y%m%d")
             year = f"{dt_start.year:04d}"
             month = f"{dt_start.month:02d}"
@@ -635,8 +739,9 @@ if __name__ == "__main__":
             txt_block, qtd_itens_filtrados_mes = salvar_relatorios(json_path, txt_path, dados_para_json_mes, dados_para_txt_mes)
 
             if txt_block:
-                titulo_mes = f"\n########################  {year}-{month}  ########################\n"
-                unificado_sections.append(titulo_mes + txt_block)
+                # unificado via StringIO (sem concat cara)
+                unificado_sections.write(f"\n########################  {year}-{month}  ########################\n")
+                unificado_sections.write(txt_block)
                 total_itens_filtrados_geral += qtd_itens_filtrados_mes
 
             print(f"\n[RESUMO {year}-{month}] Contratações com itens filtrados: {len(dados_para_txt_mes)}")
@@ -664,7 +769,7 @@ if __name__ == "__main__":
         try:
             with open(unificado_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(header_unificado))
-                f.write("\n".join(unificado_sections).rstrip() + "\n")
+                f.write(unificado_sections.getvalue().rstrip() + "\n")
             print(f"\n[OK] UNIFICADO salvo em: {unificado_path}")
         except Exception as e:
             print(f"\n[ERRO] Falha ao salvar UNIFICADO: {e}")
