@@ -8,6 +8,8 @@ import database as db
 import pncp
 import io
 import contextlib
+import threading
+import time
 
 # ==============================
 # NOVA IMPORTAÇÕES PARA E-MAIL
@@ -915,6 +917,204 @@ def main(page: ft.Page):
             columns=12, run_spacing=16, spacing=16,
         )
         return grid
+
+    # ==============================
+    # PNCP Search - Status e Progresso
+    # ==============================
+
+    class ProgressStore:
+        """Thread-safe store para acompanhar progresso da coleta."""
+
+        def __init__(self):
+            self._lock = threading.Lock()
+            self.state = {
+                "total_pages": 0,
+                "processed_pages": 0,
+                "total_items": 0,
+                "period_label": "",
+                "months": [],
+                "errors_429_total": 0,
+                "queue_retry": 0,
+                "last_update_ts": 0,
+            }
+            self._listeners: list[callable] = []
+            self._timer: threading.Timer | None = None
+
+        def subscribe(self, listener):
+            self._listeners.append(listener)
+
+        def _emit(self):
+            for cb in self._listeners:
+                cb()
+            page.update()
+
+        def notify_ui(self):
+            with self._lock:
+                if self._timer:
+                    self._timer.cancel()
+                self._timer = threading.Timer(0.2, lambda: page.call_from_thread(self._emit))
+                self._timer.start()
+
+        # --- Mutations ---
+        def set_total_pages(self, n: int):
+            with self._lock:
+                self.state["total_pages"] = n
+            self.notify_ui()
+
+        def inc_processed_pages(self, k: int = 1):
+            with self._lock:
+                self.state["processed_pages"] += k
+            self.notify_ui()
+
+        def set_total_items(self, n: int):
+            with self._lock:
+                self.state["total_items"] = n
+            self.notify_ui()
+
+        def set_month_status(self, id: str, status: str, pages_done: int | None = None, pages_total: int | None = None):
+            with self._lock:
+                for m in self.state["months"]:
+                    if m.get("id") == id:
+                        m["status"] = status
+                        if pages_done is not None:
+                            m["pages_done"] = pages_done
+                        if pages_total is not None:
+                            m["pages_total"] = pages_total
+                        break
+            self.notify_ui()
+
+        def inc_error_429(self):
+            with self._lock:
+                self.state["errors_429_total"] += 1
+            self.notify_ui()
+
+        def set_queue_retry(self, n: int):
+            with self._lock:
+                self.state["queue_retry"] = n
+            self.notify_ui()
+
+        def touch_last_update(self):
+            with self._lock:
+                self.state["last_update_ts"] = int(time.time())
+            self.notify_ui()
+
+    class StatusCard(ft.Container):
+        def __init__(self, store: ProgressStore):
+            self.store = store
+            self.store.subscribe(self.refresh)
+
+            self.period = ft.Text("", size=12, color=get_theme_color("text.muted"))
+            header = ft.Row(
+                [
+                    ft.Icon("assignment", color=get_theme_color("text.primary")),
+                    ft.Column(
+                        [
+                            ft.Text("Status da Coleta PNCP", size=16, weight=ft.FontWeight.W_600, color=get_theme_color("text.primary")),
+                            self.period,
+                        ],
+                        spacing=0,
+                    ),
+                ],
+                spacing=12,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            )
+
+            self.pages = ft.Text("Páginas: 0/0", size=20, weight=ft.FontWeight.W_600, font_family="RobotoMono", color=get_theme_color("text.primary"))
+            self.items = ft.Text("Itens: 0", size=14, font_family="RobotoMono", color=get_theme_color("text.muted"))
+            self.progress = ft.ProgressBar(value=0, height=8, bgcolor=get_theme_color("bg.input.default"))
+            self.updated = ft.Text("", size=12, color=get_theme_color("text.muted"))
+            self.month_wrap = ft.Wrap(spacing=4, run_spacing=4)
+            self.errors = ft.Text("Erros 429: 0", size=12, font_family="RobotoMono", color=get_theme_color("text.muted"))
+            self.retry = ft.Text("Fila retry: 0", size=12, font_family="RobotoMono", color=get_theme_color("text.muted"))
+
+            footer = ft.Row(
+                [self.errors, self.retry],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            )
+
+            super().__init__(
+                bgcolor=get_theme_color("bg.surface"),
+                border_radius=16,
+                padding=16,
+                shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=TOKENS["colors"]["shadow"]["faint"]),
+                content=ft.Column(
+                    spacing=12,
+                    controls=[
+                        header,
+                        self.pages,
+                        self.items,
+                        self.progress,
+                        ft.Row([
+                            self.updated,
+                            ft.IconButton("refresh", on_click=lambda _: self.refresh(), tooltip="Atualizar"),
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        self.month_wrap,
+                        footer,
+                    ],
+                ),
+            )
+
+        def _build_month(self, m: dict) -> ft.Control:
+            color_map = {
+                "pending": get_theme_color("text.muted"),
+                "running": ft.Colors.AMBER,
+                "done": ft.Colors.GREEN,
+            }
+            icon_map = {
+                "pending": "schedule",
+                "running": "play_arrow",
+                "done": "check",
+            }
+            pill = ft.Container(
+                height=PILL["sm"]["h"],
+                padding=ft.padding.symmetric(0, PILL["sm"]["px"]),
+                bgcolor=color_map.get(m["status"], get_theme_color("text.muted")),
+                border_radius=BORDER_RADIUS_PILL,
+                on_click=lambda e, m=m: self._open_month(m),
+                content=ft.Row(
+                    [
+                        ft.Icon(icon_map.get(m["status"], "schedule"), size=14, color=get_theme_color("text.inverse")),
+                        ft.Text(m.get("label", ""), size=PILL["sm"]["font"], color=get_theme_color("text.inverse"), font_family="RobotoMono"),
+                    ],
+                    spacing=4,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            )
+            return ft.Tooltip(
+                message=f"{m.get('pages_done', 0)}/{m.get('pages_total', 0)} - 429: {m.get('errors_429', 0)}",
+                content=pill,
+            )
+
+        def _open_month(self, m: dict):
+            dlg = ft.AlertDialog(
+                title=ft.Text(f"Detalhes {m.get('label', '')}"),
+                content=ft.Column(
+                    spacing=8,
+                    controls=[
+                        ft.Text(f"Páginas: {m.get('pages_done', 0)}/{m.get('pages_total', 0)}"),
+                        ft.Text(f"Erros 429: {m.get('errors_429', 0)}"),
+                    ],
+                ),
+                actions=[ft.TextButton("Fechar", on_click=lambda e: page.close(dlg))],
+            )
+            page.open(dlg)
+
+        def refresh(self):
+            s = self.store.state
+            self.pages.value = f"Páginas: {s['processed_pages']}/{s['total_pages']}"
+            self.items.value = f"Itens: {s['total_items']}"
+            self.period.value = s.get("period_label", "")
+            if s.get("total_pages"):
+                self.progress.value = s["processed_pages"] / s["total_pages"]
+            else:
+                self.progress.value = 0
+            self.errors.value = f"Erros 429: {s['errors_429_total']}"
+            self.retry.value = f"Fila retry: {s['queue_retry']}"
+            self.month_wrap.controls = [self._build_month(m) for m in s.get("months", [])]
+            if s.get("last_update_ts"):
+                self.updated.value = f"Atualizado há {int(time.time() - s['last_update_ts'])}s"
+            self.update()
     
     def PNCPSearchView():
         # ---------- campos ----------
@@ -1009,18 +1209,9 @@ def main(page: ft.Page):
             style=ft.ButtonStyle(color=get_theme_color("brand.primary.bg")),
         )
 
-        # ---------- log à direita ----------
-        log = ft.TextField(
-            read_only=True,
-            multiline=True,
-            min_lines=18,
-            max_lines=18,
-            border=ft.InputBorder.NONE,
-            value="Aguardando início da busca...",
-            text_style=ft.TextStyle(size=13),
-            bgcolor=("#0f172a" if get_active_theme() == "dark" else TOKENS["colors"]["bg"]["surface"]["light"]),
-            color=(ft.Colors.WHITE if get_active_theme() == "dark" else get_theme_color("text.primary")),
-        )
+        # ---------- status card ----------
+        status_store = ProgressStore()
+        status_card = StatusCard(store=status_store)
 
         # ---------- ação: iniciar busca ----------
         # helpers de data
@@ -1033,44 +1224,52 @@ def main(page: ft.Page):
             data_i = _br_date_to_api(data_inicial.value)
             data_f = _br_date_to_api(data_final.value)
 
-            # resumo no log
-            resumo = [
-                "▶ PNCP Search",
-                f"Objeto: {palavra_obj.value or '—'}",
-                f"Termos nos itens: {termos_itens.value or '—'}",
-                f"Modalidades: {', '.join(mods_sel) if mods_sel else 'todas'}",
-                f"Modo de disputa: {modo_disputa.value or '—'}",
-                f"Período: {(data_inicial.value or '—')} a {(data_final.value or '—')}",
-                "Status: iniciando busca...\n",
-            ]
-            log.value = "\n".join(resumo)
+            # configura estado inicial do card
+            try:
+                start_dt = datetime.strptime(data_i, "%Y%m%d")
+                end_dt = datetime.strptime(data_f, "%Y%m%d")
+                status_store.state["period_label"] = f"{start_dt.strftime('%b').title()}–{end_dt.strftime('%b/%Y').title()}"
+                intervalos = pncp.gerar_intervalos_mensais(data_i, data_f)
+                months = []
+                for inicio, _ in intervalos:
+                    dt = datetime.strptime(inicio, "%Y%m%d")
+                    months.append({
+                        "id": dt.strftime("%Y-%m"),
+                        "label": dt.strftime("%b").upper(),
+                        "status": "pending",
+                        "pages_total": 0,
+                        "pages_done": 0,
+                        "errors_429": 0,
+                    })
+                status_store.state["months"] = months
+            except Exception:
+                pass
+            status_store.set_total_pages(0)
+            status_store.inc_processed_pages(0)
+            status_store.set_total_items(0)
+            status_store.touch_last_update()
 
             # evita clique duplo
             iniciar_btn.disabled = True
             page.update()
 
             def worker():
-                class Writer(io.TextIOBase):
-                    def write(self_inner, s):
-                        # Atualiza o log diretamente a partir do thread
-                        log.value += s
-                        log.update()
-                        return len(s)
-
                 msg = "Busca concluída. Relatórios gerados na pasta 'Relatórios'."
                 try:
-                    with contextlib.redirect_stdout(Writer()):
-                        pncp.run(
-                            (palavra_obj.value or '').strip().lower(),
-                            (termos_itens.value or '').strip(),
-                            ';'.join(mods_sel),
-                            (modo_disputa.value or '').strip(),
-                            data_i,
-                            data_f,
-                        )
+                    pncp.run(
+                        (palavra_obj.value or '').strip().lower(),
+                        (termos_itens.value or '').strip(),
+                        ';'.join(mods_sel),
+                        (modo_disputa.value or '').strip(),
+                        data_i,
+                        data_f,
+                    )
                 except Exception as err:
                     msg = f"Erro: {err}"
 
+                for m in status_store.state["months"]:
+                    status_store.set_month_status(m["id"], "done", m.get("pages_total"), m.get("pages_total"))
+                status_store.touch_last_update()
                 # Finaliza (sem call_from_thread)
                 iniciar_btn.disabled = False
                 page.snack_bar = ft.SnackBar(
@@ -1123,19 +1322,7 @@ def main(page: ft.Page):
             ),
         )
 
-        progresso_card = ft.Container(
-            bgcolor=get_theme_color("bg.surface"),
-            border_radius=16,
-            padding=16,
-            shadow=ft.BoxShadow(blur_radius=12, spread_radius=1, color=TOKENS["colors"]["shadow"]["faint"]),
-            content=ft.Column(
-                spacing=12,
-                controls=[
-                    ft.Text("Progresso da Busca", size=16, weight=ft.FontWeight.W_600, color=get_theme_color("text.primary")),
-                    ft.Container(content=log, bgcolor=None, border_radius=12, padding=0),
-                ],
-            ),
-        )
+        progresso_card = status_card
 
         # layout geral
         header = ft.Text("PNCP Search", size=20, weight=ft.FontWeight.W_700, color=get_theme_color("text.primary"))
