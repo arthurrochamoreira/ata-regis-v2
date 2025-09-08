@@ -9,9 +9,6 @@ import pncp
 import io
 import contextlib
 
-# ==============================
-# NOVA IMPORTAÇÕES PARA E-MAIL
-# ==============================
 import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -22,9 +19,6 @@ from email.mime.text import MIMEText
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
-# ==============================
-# DESIGN TOKENS
-# ==============================
 
 TOKENS = {
     "colors": {
@@ -72,9 +66,6 @@ TOKENS = {
             "primary": {
                 "bg": "#4f46e5",                   # Cor de fundo para botões de ação primária - indigo-600
             },
-            # ================================================================= #
-            # ======================= MUDANÇA APLICADA AQUI =================== #
-            # ================================================================= #
             "secondary": {
                 "bg": {
                     "light": "#64748b",      # Cor para modo claro (ex: slate-500)
@@ -168,15 +159,9 @@ TOKENS = {
     }
 }
 
-# ==============================
-# CONFIGURAÇÃO INICIAL DO TEMA
-# ==============================
 initial_theme = "dark"            
 
 
-# ==============================
-# CONSTANTES DE LAYOUT
-# ==============================
 W_COLLAPSED = 80
 W_EXPANDED = 256
 P_ROOT = 16
@@ -202,9 +187,6 @@ DEFAULT_BADGE_SIZE = "sm"
 BORDER_WIDTH = 1
 BORDER_RADIUS_PILL = 999
 
-# ==============================
-# CONST: Modalidades PNCP (rótulos ilustrativos)
-# ==============================
 MODALIDADES = [
     (1,  "Leilão – Eletrônico"),
     (2,  "Diálogo Competitivo"),
@@ -218,9 +200,6 @@ MODALIDADES = [
     (10, "RDC – Regime Diferenciado de Contratações"),
 ]
 
-# ==============================
-# INTEGRAÇÃO COM BANCO DE DADOS
-# ==============================
 def _compute_dashboard(atas: dict) -> dict:
     """Calcula métricas agregadas para o dashboard."""
     vigentes = len(atas.get("vigentes", []))
@@ -249,9 +228,6 @@ db.init_db()
 _refresh_data()
 
 
-# ==============================
-# UTILITÁRIOS: MÁSCARAS E VALIDAÇÕES
-# ==============================
 class MaskUtils:
     @staticmethod
     def _get_only_digits(text: str) -> str:
@@ -353,9 +329,6 @@ class Validators:
             return None
         return None
 
-# ==============================
-# NOVA SEÇÃO: ENVIO DE E-MAIL
-# ==============================
 def enviar_email_ata(ata: dict, destinatario: str):
     """
     Envia um e-mail com os detalhes de uma ATA usando uma conta Outlook.
@@ -526,9 +499,6 @@ def enviar_email_ata(ata: dict, destinatario: str):
         print(f"Falha ao enviar e-mail: {e}")
         return False, f"Falha ao enviar e-mail: {e}"
 
-# ==============================
-# APP
-# ==============================
 def main(page: ft.Page):
     
     if page.session.get("active_theme") is None:
@@ -776,9 +746,6 @@ def main(page: ft.Page):
             
             page.update()
 
-    # ==============================
-    # DASHBOARD VIEW
-    # ==============================
     def StatCard(title: str, value: str, description: str, icon_name: str):
         return ft.Container(
             bgcolor=get_theme_color("bg.surface"),
@@ -1153,9 +1120,6 @@ def main(page: ft.Page):
 
 
 
-    # ==============================
-    # ATAS: Tabela, Detalhes e Edição
-    # ==============================
     def badge(text: str, variant: str, size: str = DEFAULT_BADGE_SIZE):
         size_cfg = BADGE.get(size, BADGE["sm"])
         
@@ -1623,7 +1587,6 @@ def main(page: ft.Page):
 
     def show_ata_details(ata: dict):
 
-        # --- NOVA FUNÇÃO INTERNA PARA O DIÁLOGO DE E-MAIL ---
         def show_email_dialog(e):
             destinatario_field = tf(label="E-mail do Destinatário", autofocus=True)
             progress_ring = ft.ProgressRing(visible=False, width=20, height=20)
@@ -1669,7 +1632,6 @@ def main(page: ft.Page):
             )
             page.open(dialog)
 
-        # --- ALTERAÇÃO NO CABEÇALHO PARA ADICIONAR O BOTÃO ---
         header = ft.Row(
             controls=[
                 ft.Column(controls=[
@@ -1680,9 +1642,6 @@ def main(page: ft.Page):
                     controls=[
                         pill_button("Voltar", icon="arrow_back", variant="outlined", on_click=lambda e: (set_content(AtasPage()), page.update())),
                         pill_button("Editar", icon="edit", variant="filled", on_click=lambda e, ata_=ata: show_ata_edit(ata_)),
-                        # ================================================================= #
-                        # ======================= MUDANÇA APLICADA AQUI =================== #
-                        # ================================================================= #
                         pill_button(
                             "Enviar E-mail", 
                             icon="email", 
@@ -1969,9 +1928,6 @@ def main(page: ft.Page):
                 content=ft.Column(controls=[ft.Text(title, size=18, weight=ft.FontWeight.W_600, color=get_theme_color("text.primary")), ft.Text(subtitle, color=get_theme_color("text.muted"))], spacing=6))
         ])
 
-    # ==============================
-    # ASIDE (MENU)
-    # ==============================
     top_logo = ft.Container(height=56, alignment=ft.alignment.center, content=ft.Icon("diamond", size=ICON_SIZE, color=get_theme_color("component.sidebar.icon.logo")), padding=ft.padding.only(top=8, bottom=8))
     
     menu_icon = ft.Icon(

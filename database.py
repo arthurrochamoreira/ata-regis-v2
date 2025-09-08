@@ -42,9 +42,6 @@ from sqlalchemy.orm import (
     sessionmaker, selectinload,
 )
 
-# ================================================================
-# ORM MODELS
-# ================================================================
 
 Base = declarative_base()
 
@@ -170,9 +167,6 @@ class Anexo(Base):
     ata: Mapped[Ata] = relationship(back_populates="anexos")
 
 
-# ================================================================
-# ENGINE / SESSION MANAGEMENT
-# ================================================================
 
 engine = None
 SessionLocal: scoped_session
@@ -193,9 +187,6 @@ def get_engine(db_path: str, echo: bool = False):
     return eng
 
 
-# ================================================================
-# UTILITIES
-# ================================================================
 
 
 def format_currency(valor_centavos: Optional[int]) -> str:
@@ -256,9 +247,6 @@ def pretty_situacao(s: str) -> str:
     return " ".join(word.capitalize() for word in s.split())
 
 
-# ================================================================
-# DATABASE INITIALIZATION
-# ================================================================
 
 
 def init_db(db_path: str = "ata_regis.db") -> None:
@@ -500,9 +488,6 @@ def _seed(session: Session) -> None:
         )
 
 
-# ================================================================
-# CONFIG PARAMS
-# ================================================================
 
 
 def set_param(name: str, value: str) -> None:
@@ -517,9 +502,6 @@ def get_param(name: str, default: Optional[str] = None) -> str:
         return cfg.value if cfg else default
 
 
-# ================================================================
-# CRUD HELPERS
-# ================================================================
 
 
 def create_fornecedor(
@@ -642,9 +624,6 @@ def delete_ata_db(ata_id: int) -> None:
             session.commit()
 
 
-# ================================================================
-# QUERY HELPERS
-# ================================================================
 
 
 def _ata_to_dict(ata: Ata, situacao: Optional[str] = None) -> dict:

@@ -14,7 +14,6 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# ============================== Configs ==============================
 BASE_CONSULTA = "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao"
 BASE_ITENS = "https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/itens"
 HEADERS = {
@@ -53,7 +52,6 @@ MODALIDADES = {
 PODER_MAP = {"E": "Executivo", "L": "Legislativo", "J": "Judiciário", "M": "Ministério Público", "D": "Defensoria Pública", "T": "Tribunais de Contas", "N": "Município"}
 ESFERA_MAP = {"U": "União", "E": "Estadual", "M": "Municipal", "D": "Distrito Federal"}
 
-# ============================== Utilidades ==============================
 def jloads(b: bytes | str):
     if isinstance(b, bytes):
         return json.loads(b.decode("utf-8", "ignore"))
@@ -308,7 +306,6 @@ def extract_campos_relatorio_minimos(c: dict) -> dict:
     out["anoCompra"] = c.get("anoCompra")
     return {k: v for k, v in out.items() if v not in (None, "", [], {})}
 
-# ============================== Progress agregado ==============================
 class Progress:
     def __init__(self, emit_every=50, emit_seconds=2.0, prefix=""):
         self.emit_every = int(emit_every)
@@ -338,7 +335,6 @@ class Progress:
             print(f"{self.prefix} progresso: páginas {self.pages_done}/{self.pages_total} ({pct:5.1f}%) | itens {self.items_done}")
             self._last_emit = now
 
-# ============================== Consultas de Contratações ==============================
 def fetch_page_with_pagesize(session: requests.Session, pagina: int, data_ini: str, data_fim: str,
                               modalidade: int, modo: int | None):
     key = (modalidade, modo)
@@ -437,7 +433,6 @@ def fetch_contratacoes_multi_modalidade(session: requests.Session, data_ini: str
 
     return all_contratacoes
 
-# ============================== Itens (paralelismo) ==============================
 def itens_pncp_por_id(session: requests.Session, id_pncp: str) -> list[dict]:
     cnpj, ano, seq = parse_id_pncp(id_pncp)
     url = BASE_ITENS.format(cnpj=cnpj, ano=ano, seq=seq)
@@ -497,7 +492,6 @@ def fetch_itens_para_ids(session: requests.Session, ids_uniq: list[tuple[str, st
                     progress_items.items_tick(1)
     return encontrados
 
-# ============================== Saída / Relatórios ==============================
 def ensure_dirs(root: str, year: str, month: str):
     json_dir = os.path.join(root, "json", year, month)
     txt_dir  = os.path.join(root, "txt",  year, month)
@@ -603,7 +597,6 @@ def salvar_relatorios(json_path: str, txt_path: str, dados_json: dict, dados_txt
     return ("\n".join(txt_content_lines).rstrip() + "\n") if txt_content_lines else "", total_itens_filtrados
     return ("\n".join(txt_content_lines).rstrip() + "\n") if txt_content_lines else "", total_itens_filtrados
 
-# ============================== MAIN ==============================
 
 def run(palavra_contratacao: str, termos_itens_raw: str, modalidades_raw: str,
         modo_raw: str, data_inicial_geral: str, data_final_geral: str):
